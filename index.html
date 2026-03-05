@@ -3,20 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Xenon Onyx | flopriogames</title>
+    <title>Xenon Onyx | Stable</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root { --onyx: #050505; --panel: #0c0c0d; --xenon: #00f2ff; --accent: #7000ff; --glass: rgba(255,255,255,0.03); }
-        * { box-sizing: border-box; scroll-behavior: smooth; }
+        :root { --onyx: #050505; --panel: #0c0c0d; --xenon: #00f2ff; --red: #ff3b3b; }
+        * { box-sizing: border-box; }
         body, html { margin: 0; padding: 0; height: 100%; background: var(--onyx); color: #fff; font-family: 'Inter', sans-serif; overflow: hidden; }
         
         #app { display: none; height: 100vh; grid-template-columns: 72px 260px 1fr; }
 
         /* Left Rail */
         .rail { background: #000; display: flex; flex-direction: column; align-items: center; padding: 12px 0; border-right: 1px solid #1a1a1a; gap: 12px; }
-        .s-btn { width: 48px; height: 48px; background: #111; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid #222; font-size: 10px; font-weight: bold; overflow: hidden; }
-        .s-btn:hover, .s-btn.active { border-radius: 14px; border-color: var(--xenon); color: var(--xenon); box-shadow: 0 0 10px var(--xenon); }
-        .s-btn.add { border-style: dashed; color: #444; font-size: 20px; }
+        .s-btn { width: 48px; height: 48px; background: #111; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid #222; font-size: 10px; font-weight: bold; }
+        .s-btn.active { border-radius: 14px; border-color: var(--xenon); color: var(--xenon); box-shadow: 0 0 10px var(--xenon); }
 
         /* Sidebar */
         .side { background: var(--panel); border-right: 1px solid #1a1a1a; display: flex; flex-direction: column; padding: 15px; }
@@ -24,219 +23,158 @@
         
         /* Chat Area */
         .main { display: flex; flex-direction: column; background: var(--onyx); position: relative; height: 100%; }
-        #chat-flow { flex: 1; padding: 20px; overflow-y: scroll; display: flex; flex-direction: column; gap: 12px; }
-        /* Custom Scrollbar */
-        #chat-flow::-webkit-scrollbar { width: 4px; }
-        #chat-flow::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
+        #chat-flow { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .msg { padding: 12px; border-radius: 10px; background: #0e0e0f; border: 1px solid #1a1a1a; max-width: 85%; }
+        .msg.me { align-self: flex-end; border-color: var(--xenon); background: #081516; }
+        .u-name { font-size: 10px; color: var(--xenon); display: block; margin-bottom: 4px; font-weight: bold; }
+        .system-msg { font-size: 11px; color: #555; text-align: center; margin: 10px 0; border-top: 1px solid #111; padding-top: 5px; }
 
-        .msg { padding: 12px; border-radius: 10px; background: #0e0e0f; border: 1px solid #1a1a1a; max-width: 80%; position: relative; animation: fadeIn 0.2s ease; }
-        .msg.me { align-self: flex-end; border-color: #00f2ff55; background: #081516; }
-        .u-name { font-size: 10px; color: var(--xenon); display: block; margin-bottom: 4px; font-weight: bold; text-transform: uppercase; }
+        /* Video Overlay */
+        #call-ui { position: absolute; top: 10px; right: 10px; width: 240px; z-index: 100; display: none; flex-direction: column; gap: 5px; }
+        video { width: 100%; border-radius: 8px; border: 1px solid var(--xenon); background: #000; }
+        #local-v { width: 60px; align-self: flex-end; border-color: #444; }
 
-        /* Calling Interface */
-        #call-ui { position: absolute; top: 20px; right: 20px; width: 280px; z-index: 50; display: none; flex-direction: column; gap: 10px; pointer-events: none; }
-        video { width: 100%; border-radius: 12px; border: 1px solid var(--xenon); background: #000; pointer-events: all; box-shadow: 0 10px 30px #000; }
-        #local-v { width: 80px; align-self: flex-end; margin-top: -40px; border-width: 2px; }
-
-        /* Input Zone */
-        .controls { padding: 20px; background: var(--panel); border-top: 1px solid #1a1a1a; display: flex; gap: 10px; align-items: center; }
-        input { flex: 1; padding: 14px; background: #050505; border: 1px solid #222; color: #fff; border-radius: 8px; outline: none; font-size: 14px; }
-        input:focus { border-color: var(--xenon); }
-        .act-btn { padding: 10px 20px; background: var(--xenon); border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: #000; font-size: 12px; }
-        
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        /* Controls */
+        .controls { padding: 20px; background: var(--panel); border-top: 1px solid #1a1a1a; display: flex; gap: 10px; }
+        input { flex: 1; padding: 12px; background: #000; border: 1px solid #222; color: #fff; border-radius: 6px; outline: none; }
+        .btn { padding: 10px 15px; background: var(--xenon); border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: #000; }
+        .btn-call { background: #111; color: var(--xenon); border: 1px solid var(--xenon); width: 100%; margin-top: 5px; }
 
         /* Login */
-        #login-screen, .modal { position: fixed; inset: 0; background: #000; z-index: 1000; display: flex; align-items: center; justify-content: center; }
-        .modal-body { background: #0a0a0a; padding: 40px; border-radius: 16px; border: 1px solid #222; width: 340px; text-align: center; }
+        #login { position: fixed; inset: 0; background: #000; z-index: 1000; display: flex; align-items: center; justify-content: center; }
+        .box { background: #0a0a0a; padding: 40px; border-radius: 12px; border: 1px solid #222; width: 320px; text-align: center; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen">
-        <div class="modal-body">
-            <h1 style="color: var(--xenon); letter-spacing: 4px; margin: 0;">XENON</h1>
-            <p style="color: #444; font-size: 12px; margin-bottom: 30px;">ONYX ENCRYPTION ACTIVE</p>
-            <input type="text" id="user-in" placeholder="Set Alias...">
-            <button class="act-btn" style="width:100%; margin-top:10px;" onclick="initApp()">BOOT PROTOCOL</button>
+    <div id="login">
+        <div class="box">
+            <h2 style="color:var(--xenon)">XENON ONYX</h2>
+            <input type="text" id="user-in" placeholder="Username...">
+            <button class="btn" style="width:100%; margin-top:10px;" onclick="boot()">INITIALIZE</button>
         </div>
     </div>
 
     <div id="app">
-        <div class="rail" id="server-rail">
+        <div class="rail">
             <div class="s-btn active">HQ</div>
-            <div class="s-btn add" onclick="showModal()">+</div>
+            <div class="s-btn" onclick="alert('Server Creation: Shared Seed required.')">+</div>
         </div>
 
         <div class="side">
-            <div class="id-card" id="my-id" onclick="copyID()">uuid://generating...</div>
-            <p style="font-size: 10px; color: #333; letter-spacing: 1px; margin-bottom: 10px;">PEER CONNECTION</p>
-            <input type="text" id="peer-id-in" placeholder="Target UUID...">
-            <button class="act-btn" onclick="connectPeer()" style="width:100%; margin-top: 5px;">ESTABLISH LINK</button>
-            
-            <div style="margin-top:auto; display:flex; flex-direction:column; gap:8px;">
-                <button class="act-btn" style="background:#111; color:var(--xenon); border:1px solid var(--xenon)" onclick="startCall('video')">START VIDEO</button>
-                <button class="act-btn" style="background:#111; color:#fff; border:1px solid #444" onclick="startCall('screen')">SHARE SCREEN</button>
-            </div>
+            <div class="id-card" id="my-id" onclick="copyID()">Connecting to Peer Cloud...</div>
+            <p style="font-size:10px; color:#444">TARGET UUID</p>
+            <input type="text" id="target-id" placeholder="uuid://...">
+            <button class="btn" onclick="connect()" style="width:100%; margin-top:5px;">CONNECT</button>
+            <button class="btn btn-call" onclick="makeCall()">VIDEO CALL</button>
         </div>
 
         <div class="main">
             <div id="call-ui">
                 <video id="remote-v" autoplay playsinline></video>
                 <video id="local-v" autoplay muted playsinline></video>
-                <button class="act-btn" style="background:#ff3b3b; color:#fff; pointer-events:all;" onclick="endCall()">END CALL</button>
+                <button class="btn" style="background:var(--red); color:#fff" onclick="endCall()">END</button>
             </div>
-            
-            <div id="chat-flow">
-                <div class="msg">
-                    <span class="u-name">SYSTEM</span>
-                    Welcome, operative. UUIDs are volatile. All transmissions are P2P.
-                </div>
-            </div>
-
+            <div id="chat-flow"></div>
             <div class="controls">
-                <input type="text" id="chat-in" placeholder="Type transmission..." onkeypress="if(event.key==='Enter') sendText()">
-                <button class="act-btn" onclick="sendText()">SEND</button>
+                <input type="text" id="chat-in" placeholder="Message..." onkeypress="if(event.key==='Enter') send()">
+                <button class="btn" onclick="send()">SEND</button>
             </div>
-        </div>
-    </div>
-
-    <div id="s-modal" class="modal" style="display:none">
-        <div class="modal-body">
-            <h3>CREATE SERVER</h3>
-            <input type="text" id="s-name" placeholder="Server Name">
-            <button class="act-btn" onclick="addServer()" style="width:100%">GENERATE SEED</button>
-            <button class="act-btn" onclick="hideModal()" style="width:100%; background:transparent; color:#444; margin-top:10px;">CANCEL</button>
         </div>
     </div>
 
     <script>
-        let peer, conn, myName, currentCall;
-        let servers = JSON.parse(localStorage.getItem('xo_v3_servers') || '[]');
+        let peer, conn, user, myStream;
 
-        function initApp() {
-            myName = document.getElementById('user-in').value || "Agent-" + Math.floor(Math.random()*999);
+        function boot() {
+            user = document.getElementById('user-in').value || "User";
             peer = new Peer();
             
             peer.on('open', id => {
                 document.getElementById('my-id').innerText = "uuid://" + id;
-                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('login').style.display = 'none';
                 document.getElementById('app').style.display = 'grid';
-                renderServers();
-                window.history.pushState({}, "", "/login/" + myName);
+                sysMsg("System: Peer Engine Online.");
             });
 
-            peer.on('connection', c => {
-                conn = c;
-                setupDataHandlers();
+            peer.on('error', err => sysMsg("Error: " + err.type));
+
+            // Receive Connection
+            peer.on('connection', incoming => {
+                conn = incoming;
+                bindEvents();
             });
 
+            // Receive Call
             peer.on('call', call => {
-                if(confirm("INCOMING TRANSMISSION: Accept Video?")) {
-                    navigator.mediaDevices.getUserMedia({video:true, audio:true}).then(stream => {
-                        currentCall = call;
-                        call.answer(stream);
+                if(confirm("Incoming Call from " + call.peer)) {
+                    navigator.mediaDevices.getUserMedia({video:true, audio:true}).then(s => {
+                        myStream = s;
+                        call.answer(s);
                         document.getElementById('call-ui').style.display = 'flex';
-                        document.getElementById('local-v').srcObject = stream;
-                        call.on('stream', remoteStream => {
-                            document.getElementById('remote-v').srcObject = remoteStream;
-                        });
+                        document.getElementById('local-v').srcObject = s;
+                        call.on('stream', rs => document.getElementById('remote-v').srcObject = rs);
                     });
                 }
             });
         }
 
-        function connectPeer() {
-            const tid = document.getElementById('peer-id-in').value.replace('uuid://','').trim();
-            if(!tid) return alert("Missing ID");
-            conn = peer.connect(tid, {metadata: {name: myName}});
-            setupDataHandlers();
+        function connect() {
+            const tid = document.getElementById('target-id').value.replace('uuid://','').trim();
+            conn = peer.connect(tid, {metadata: {user: user}});
+            bindEvents();
         }
 
-        function setupDataHandlers() {
+        function bindEvents() {
             conn.on('open', () => {
-                pushMsg("SYSTEM", `Connection Secure with ${conn.metadata.name}`);
-                conn.on('data', data => {
-                    if(data.type === 'text') pushMsg(data.user, data.val);
-                });
+                sysMsg("Connected to Peer.");
+                conn.on('data', data => pushMsg(data.u, data.v));
             });
         }
 
-        function sendText() {
+        function send() {
             const input = document.getElementById('chat-in');
             if(conn && input.value) {
-                conn.send({type:'text', user:myName, val:input.value});
-                pushMsg(myName, input.value, true);
+                conn.send({u: user, v: input.value});
+                pushMsg(user, input.value, true);
                 input.value = "";
             }
         }
 
-        function pushMsg(u, v, isMe=false) {
-            const flow = document.getElementById('chat-flow');
-            const div = document.createElement('div');
-            div.className = `msg ${isMe ? 'me' : ''}`;
-            div.innerHTML = `<span class="u-name">${u}</span>${v}`;
-            flow.appendChild(div);
-            // AUTO-SCROLL FEATURE
-            flow.scrollTop = flow.scrollHeight;
-        }
-
-        async function startCall(mode) {
-            const tid = document.getElementById('peer-id-in').value.replace('uuid://','').trim();
-            if(!tid) return alert("Connect to a Peer first!");
-            
-            const stream = (mode === 'video') 
-                ? await navigator.mediaDevices.getUserMedia({video:true, audio:true})
-                : await navigator.mediaDevices.getDisplayMedia({video:true});
-
+        async function makeCall() {
+            const tid = document.getElementById('target-id').value.replace('uuid://','').trim();
+            myStream = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
             document.getElementById('call-ui').style.display = 'flex';
-            document.getElementById('local-v').srcObject = stream;
-            
-            const call = peer.call(tid, stream);
-            currentCall = call;
-            call.on('stream', remoteStream => {
-                document.getElementById('remote-v').srcObject = remoteStream;
-            });
+            document.getElementById('local-v').srcObject = myStream;
+            const call = peer.call(tid, myStream);
+            call.on('stream', rs => document.getElementById('remote-v').srcObject = rs);
         }
 
         function endCall() {
-            if(currentCall) currentCall.close();
             document.getElementById('call-ui').style.display = 'none';
-            const tracks = document.getElementById('local-v').srcObject?.getTracks();
-            tracks?.forEach(t => t.stop());
+            myStream.getTracks().forEach(t => t.stop());
         }
 
-        /* Server Logic */
-        function showModal() { document.getElementById('s-modal').style.display='flex'; }
-        function hideModal() { document.getElementById('s-modal').style.display='none'; }
-        
-        function addServer() {
-            const n = document.getElementById('s-name').value;
-            if(!n) return;
-            servers.push({id: Date.now(), name: n.substring(0,2).toUpperCase(), full: n});
-            localStorage.setItem('xo_v3_servers', JSON.stringify(servers));
-            renderServers();
-            hideModal();
+        function pushMsg(u, v, me=false) {
+            const flow = document.getElementById('chat-flow');
+            const d = document.createElement('div');
+            d.className = `msg ${me?'me':''}`;
+            d.innerHTML = `<span class="u-name">${u}</span>${v}`;
+            flow.appendChild(d);
+            flow.scrollTop = flow.scrollHeight;
         }
 
-        function renderServers() {
-            const rail = document.getElementById('server-rail');
-            const current = rail.querySelectorAll('.s-btn');
-            current.forEach((b,i) => { if(i>1) b.remove(); });
-            servers.forEach(s => {
-                const div = document.createElement('div');
-                div.className = 's-btn';
-                div.innerText = s.name;
-                div.title = s.full;
-                div.onclick = () => alert(`Server: ${s.full}\nShare your UUID with friends to invite them to this node.`);
-                rail.appendChild(div);
-            });
+        function sysMsg(t) {
+            const flow = document.getElementById('chat-flow');
+            const d = document.createElement('div');
+            d.className = 'system-msg';
+            d.innerText = t;
+            flow.appendChild(d);
         }
 
         function copyID() {
-            const id = document.getElementById('my-id').innerText;
-            navigator.clipboard.writeText(id);
-            alert("UUID Copied to Clipboard.");
+            navigator.clipboard.writeText(document.getElementById('my-id').innerText);
+            alert("UUID Copied.");
         }
     </script>
 </body>
