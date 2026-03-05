@@ -3,118 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Xenon Onyx | Responsive P2P</title>
+    <title>Xenon Onyx | Stream Pro</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root { --onyx: #050505; --panel: #0c0c0d; --xenon: #00f2ff; --accent: #7000ff; }
-        * { box-sizing: border-box; }
+        :root { --onyx: #050505; --panel: #0c0c0d; --xenon: #00f2ff; --red: #ff3b3b; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         
-        body, html { 
-            margin: 0; padding: 0; height: 100vh; 
+        body { 
             background: var(--onyx); color: #fff; 
-            font-family: 'Inter', sans-serif; overflow: hidden; 
+            font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; 
         }
         
-        #app { display: none; height: 100vh; grid-template-columns: 72px 260px 1fr; }
+        #app { display: none; height: 100vh; width: 100vw; display: none; flex-direction: row; }
 
         /* Left Rail */
-        .rail { background: #000; display: flex; flex-direction: column; align-items: center; padding: 12px 0; border-right: 1px solid #1a1a1a; gap: 12px; }
-        .s-btn { width: 48px; height: 48px; background: #111; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid #222; cursor: pointer; }
-        .s-btn.active { border-radius: 14px; border-color: var(--xenon); color: var(--xenon); box-shadow: 0 0 10px var(--xenon); }
-
-        /* Sidebar */
-        .side { background: var(--panel); border-right: 1px solid #1a1a1a; display: flex; flex-direction: column; padding: 15px; overflow-y: auto; }
-        .id-card { background: #000; padding: 12px; border-radius: 8px; font-size: 10px; border: 1px solid #222; margin-bottom: 20px; color: var(--xenon); cursor: pointer; word-break: break-all; }
+        .rail { width: 72px; background: #000; display: flex; flex-direction: column; align-items: center; padding: 12px 0; border-right: 1px solid #1a1a1a; gap: 12px; flex-shrink: 0; }
+        .s-btn { width: 48px; height: 48px; background: #111; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid #222; cursor: pointer; color: var(--xenon); font-weight: bold; }
         
-        /* Chat Main Engine */
-        .main { display: flex; flex-direction: column; background: var(--onyx); height: 100vh; position: relative; }
+        /* Sidebar */
+        .side { width: 260px; background: var(--panel); border-right: 1px solid #1a1a1a; display: flex; flex-direction: column; padding: 15px; flex-shrink: 0; }
+        .id-card { background: #000; padding: 10px; border-radius: 8px; font-size: 10px; border: 1px solid #222; margin-bottom: 20px; color: var(--xenon); cursor: pointer; word-break: break-all; }
+        
+        /* THE CHAT FIX */
+        .main { flex-grow: 1; display: flex; flex-direction: column; background: var(--onyx); height: 100vh; overflow: hidden; }
         
         #chat-flow { 
             flex: 1; 
-            padding: 20px; 
-            overflow-y: auto; /* FIXED SCROLLING */
-            display: flex; 
-            flex-direction: column; 
-            gap: 15px;
-            scroll-behavior: smooth;
+            overflow-y: scroll; /* Forces standard scrolling */
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            -webkit-overflow-scrolling: touch;
         }
 
-        /* Custom Scrollbar for Onyx Look */
-        #chat-flow::-webkit-scrollbar { width: 6px; }
-        #chat-flow::-webkit-scrollbar-track { background: transparent; }
-        #chat-flow::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
+        #chat-flow::-webkit-scrollbar { width: 8px; }
+        #chat-flow::-webkit-scrollbar-thumb { background: #222; border-radius: 4px; }
 
-        .msg { padding: 12px; border-radius: 10px; background: #0e0e0f; border: 1px solid #1a1a1a; max-width: 80%; animation: slideIn 0.2s ease; }
-        .msg.me { align-self: flex-end; border-color: #00f2ff44; background: #081516; }
-        
-        /* IMAGE RESIZING LOGIC */
-        .msg img { 
-            display: block;
-            max-width: 100%; 
-            max-height: 300px; 
-            border-radius: 8px; 
-            margin-top: 8px; 
-            object-fit: contain;
-            border: 1px solid #333;
-        }
+        .msg { padding: 12px; border-radius: 10px; background: #111; border: 1px solid #222; max-width: 80%; width: fit-content; }
+        .msg.me { align-self: flex-end; border-color: var(--xenon); background: #0a1a1b; }
+        .msg img { max-width: 100%; max-height: 250px; border-radius: 5px; margin-top: 5px; display: block; }
 
-        .u-name { font-size: 10px; color: var(--xenon); display: block; margin-bottom: 4px; font-weight: bold; }
+        /* CALL OVERLAY */
+        #call-box { position: fixed; top: 20px; right: 20px; width: 300px; z-index: 500; display: none; flex-direction: column; gap: 10px; }
+        video { width: 100%; border-radius: 12px; border: 2px solid var(--xenon); background: #000; }
+        #local-v { width: 100px; position: absolute; bottom: 50px; right: 10px; border-color: #555; }
 
-        /* Controls */
-        .controls { padding: 20px; background: var(--panel); border-top: 1px solid #1a1a1a; display: flex; gap: 10px; align-items: center; }
-        input { flex: 1; padding: 12px; background: #000; border: 1px solid #222; color: #fff; border-radius: 8px; outline: none; }
+        .controls { padding: 20px; background: var(--panel); border-top: 1px solid #222; display: flex; gap: 10px; }
+        input { flex: 1; padding: 12px; background: #000; border: 1px solid #333; color: #fff; border-radius: 8px; outline: none; }
         .btn { padding: 10px 15px; background: var(--xenon); border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: #000; }
-        
+
         #login { position: fixed; inset: 0; background: #000; z-index: 1000; display: flex; align-items: center; justify-content: center; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
     <div id="login">
-        <div style="background:#0a0a0a; padding:40px; border-radius:12px; border:1px solid #222; text-align:center; width:320px;">
-            <h2 style="color:var(--xenon); margin:0;">XENON ONYX</h2>
-            <p style="color:#444; font-size:12px; margin-bottom:20px;">SECURE P2P HUB</p>
-            <input type="text" id="user-in" placeholder="Username...">
-            <button class="btn" style="width:100%; margin-top:10px;" onclick="boot()">INITIALIZE</button>
+        <div style="background:#0a0a0a; padding:40px; border-radius:15px; border:1px solid #222; text-align:center; width:340px;">
+            <h1 style="color:var(--xenon); letter-spacing:3px;">XENON</h1>
+            <input type="text" id="user-in" placeholder="Username..." style="width:100%; margin-top:20px; padding:12px; background:#000; border:1px solid #333; color:#fff; border-radius:8px;">
+            <button class="btn" style="width:100%; margin-top:10px;" onclick="boot()">START SESSION</button>
         </div>
     </div>
 
     <div id="app">
         <div class="rail">
-            <div class="s-btn active" onclick="location.reload()">HQ</div>
-            <div class="s-btn" style="color:#333; font-size:20px;">+</div>
+            <div class="s-btn">X</div>
         </div>
 
         <div class="side">
-            <div class="id-card" id="my-id" onclick="copyID()">Generating UUID...</div>
-            <p style="font-size:10px; color:#444">SYNC TARGET</p>
-            <input type="text" id="target-id" placeholder="Paste uuid:// here">
-            <button class="btn" onclick="connect()" style="width:100%; margin-top:5px;">LINK PEER</button>
-            
-            <div style="margin-top:20px; border-top: 1px solid #222; padding-top:20px;">
-                <p style="font-size:10px; color:#444">MEDIA TOOLS</p>
-                <input type="file" id="img-in" style="display:none" onchange="sendImage(this)">
-                <button class="btn" style="width:100%; background:#111; color:var(--xenon); border:1px solid var(--xenon)" onclick="document.getElementById('img-in').click()">UPLOAD IMAGE</button>
-            </div>
+            <div class="id-card" id="my-id" onclick="copyID()">Linking...</div>
+            <input type="text" id="target-id" placeholder="Paste uuid:// here" style="margin-bottom:10px; padding:8px; font-size:12px; background:#000; color:#fff; border:1px solid #333;">
+            <button class="btn" onclick="connect()" style="width:100%">LINK PEER</button>
+            <button class="btn" onclick="startCall()" style="width:100%; margin-top:5px; background:#111; color:var(--xenon); border:1px solid var(--xenon)">LIVE CALL</button>
+            <button class="btn" onclick="endCall()" style="width:100%; margin-top:5px; background:var(--red); color:#fff;">END CALL</button>
+            <input type="file" id="file-in" style="display:none" onchange="sendFile(this)">
+            <button class="btn" style="margin-top:20px; width:100%; background:#222; color:#fff;" onclick="document.getElementById('file-in').click()">SEND IMAGE</button>
         </div>
 
         <div class="main">
+            <div id="call-box">
+                <video id="remote-v" autoplay playsinline></video>
+                <video id="local-v" autoplay muted playsinline></video>
+            </div>
             <div id="chat-flow">
-                <div class="msg">
-                    <span class="u-name">SYSTEM</span>
-                    Welcome to Xenon Onyx. Scroll enabled. Image resizing active.
-                </div>
+                <div class="msg"><b>SYSTEM:</b> Protocol Online. All data is P2P. Use Link Peer to start.</div>
             </div>
             <div class="controls">
-                <input type="text" id="chat-in" placeholder="Message..." onkeypress="if(event.key==='Enter') send()">
+                <input type="text" id="chat-in" placeholder="Type transmission..." onkeypress="if(event.key==='Enter') send()">
                 <button class="btn" onclick="send()">SEND</button>
             </div>
         </div>
     </div>
 
     <script>
-        let peer, conn, user;
+        let peer, conn, user, myStream;
 
         function boot() {
             user = document.getElementById('user-in').value || "Agent";
@@ -122,20 +105,32 @@
             peer.on('open', id => {
                 document.getElementById('my-id').innerText = "uuid://" + id;
                 document.getElementById('login').style.display = 'none';
-                document.getElementById('app').style.display = 'grid';
+                document.getElementById('app').style.display = 'flex';
+                window.history.pushState({}, "", "/login/" + user);
             });
-            peer.on('connection', c => { conn = c; bind(); });
+
+            peer.on('connection', c => { conn = c; setupConn(); });
+
+            peer.on('call', call => {
+                navigator.mediaDevices.getUserMedia({video:true, audio:true}).then(s => {
+                    myStream = s;
+                    call.answer(s);
+                    document.getElementById('call-box').style.display = 'flex';
+                    document.getElementById('local-v').srcObject = s;
+                    call.on('stream', rs => document.getElementById('remote-v').srcObject = rs);
+                });
+            });
         }
 
         function connect() {
             const tid = document.getElementById('target-id').value.replace('uuid://','').trim();
             conn = peer.connect(tid, {metadata: {user: user}});
-            bind();
+            setupConn();
         }
 
-        function bind() {
+        function setupConn() {
             conn.on('open', () => {
-                pushSys("Peer Connected.");
+                pushSys("PEER LINK ESTABLISHED");
                 conn.on('data', data => {
                     if(data.type === 'text') pushMsg(data.u, data.v);
                     if(data.type === 'img') pushImg(data.u, data.v);
@@ -152,32 +147,45 @@
             }
         }
 
-        function sendImage(input) {
-            const file = input.files[0];
+        function sendFile(input) {
             const reader = new FileReader();
             reader.onload = () => {
                 conn.send({type:'img', u:user, v:reader.result});
                 pushImg(user, reader.result, true);
             };
-            reader.readAsDataURL(file);
+            reader.readAsDataURL(input.files[0]);
+        }
+
+        async function startCall() {
+            const tid = document.getElementById('target-id').value.replace('uuid://','').trim();
+            myStream = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
+            document.getElementById('call-box').style.display = 'flex';
+            document.getElementById('local-v').srcObject = myStream;
+            const call = peer.call(tid, myStream);
+            call.on('stream', rs => document.getElementById('remote-v').srcObject = rs);
+        }
+
+        function endCall() {
+            document.getElementById('call-box').style.display = 'none';
+            if(myStream) myStream.getTracks().forEach(t => t.stop());
         }
 
         function pushMsg(u, v, me=false) {
             const f = document.getElementById('chat-flow');
             const d = document.createElement('div');
             d.className = `msg ${me?'me':''}`;
-            d.innerHTML = `<span class="u-name">${u}</span>${v}`;
+            d.innerHTML = `<small style="color:var(--xenon)">${u}</small><br>${v}`;
             f.appendChild(d);
-            f.scrollTop = f.scrollHeight; // FORCES SCROLL DOWN
+            f.scrollTo(0, f.scrollHeight);
         }
 
         function pushImg(u, v, me=false) {
             const f = document.getElementById('chat-flow');
             const d = document.createElement('div');
             d.className = `msg ${me?'me':''}`;
-            d.innerHTML = `<span class="u-name">${u}</span><img src="${v}">`;
+            d.innerHTML = `<small style="color:var(--xenon)">${u}</small><img src="${v}">`;
             f.appendChild(d);
-            f.scrollTop = f.scrollHeight; // FORCES SCROLL DOWN
+            f.scrollTo(0, f.scrollHeight);
         }
 
         function pushSys(t) {
@@ -190,7 +198,7 @@
 
         function copyID() {
             navigator.clipboard.writeText(document.getElementById('my-id').innerText);
-            alert("ID Copied.");
+            alert("UUID Copied.");
         }
     </script>
 </body>
