@@ -3,82 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Xenon Onyx | Media & Invites</title>
+    <title>Xenon Onyx | Hardened Call</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root { --onyx: #050505; --panel: #0c0c0d; --xenon: #00f2ff; --red: #ff3b3b; --glass: rgba(0, 242, 255, 0.1); }
+        :root { --onyx: #050505; --panel: #0c0c0d; --xenon: #00f2ff; --red: #ff3b3b; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        
         body { background: var(--onyx); color: #fff; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; }
+        
         #app { display: none; height: 100vh; width: 100vw; flex-direction: row; }
-
-        .rail { width: 72px; background: #000; display: flex; flex-direction: column; align-items: center; padding: 12px 0; border-right: 1px solid #1a1a1a; flex-shrink: 0; }
         .side { width: 280px; background: var(--panel); border-right: 1px solid #1a1a1a; display: flex; flex-direction: column; padding: 15px; flex-shrink: 0; }
+        .main { flex-grow: 1; display: flex; flex-direction: column; background: var(--onyx); position: relative; }
         
-        .main { flex-grow: 1; display: flex; flex-direction: column; background: var(--onyx); height: 100vh; position: relative; }
-        
-        #chat-flow { flex: 1; overflow-y: scroll; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
-        #chat-flow::-webkit-scrollbar { width: 8px; }
-        #chat-flow::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
-
-        .msg { padding: 12px; border-radius: 10px; background: #111; border: 1px solid #222; max-width: 75%; width: fit-content; position: relative; }
+        #chat-flow { flex: 1; overflow-y: scroll; padding: 25px; display: flex; flex-direction: column; gap: 12px; }
+        .msg { padding: 12px; border-radius: 10px; background: #111; border: 1px solid #222; max-width: 80%; }
         .msg.me { align-self: flex-end; border-color: var(--xenon); background: #0a1a1b; }
+
+        /* REBUILT CALL UI */
+        #call-ui { position: fixed; top: 20px; right: 20px; width: 340px; z-index: 999; display: none; background: #000; border: 2px solid var(--xenon); border-radius: 12px; box-shadow: 0 0 40px #000; overflow: hidden; }
+        .v-container { position: relative; width: 100%; background: #000; aspect-ratio: 16/9; }
+        video#remote-v { width: 100%; height: 100%; object-fit: cover; }
+        video#local-v { width: 90px; position: absolute; bottom: 10px; right: 10px; border: 1px solid #fff; border-radius: 4px; z-index: 1001; }
         
-        /* Media Sizing */
-        .msg img, .msg video { max-width: 100%; max-height: 350px; border-radius: 8px; margin-top: 8px; display: block; border: 1px solid #333; }
+        .call-btns { display: flex; background: #050505; border-top: 1px solid #222; padding: 8px; gap: 8px; }
+        .c-btn { flex: 1; padding: 8px; font-size: 10px; font-weight: bold; cursor: pointer; border-radius: 4px; border: 1px solid #333; background: #111; color: #fff; }
 
-        /* Invite Port Style */
-        .invite-box { background: var(--glass); border: 1px dashed var(--xenon); padding: 15px; border-radius: 10px; text-align: center; margin-top: 5px; }
-        .join-btn { background: var(--xenon); color: #000; border: none; padding: 8px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-
-        #call-overlay { position: fixed; top: 20px; right: 20px; width: 320px; z-index: 999; display: none; background: #000; border: 2px solid var(--xenon); border-radius: 15px; overflow: hidden; }
-        video#remote-v { width: 100%; display: block; }
-        video#local-v { width: 80px; position: absolute; bottom: 10px; right: 10px; border: 1px solid #fff; border-radius: 5px; }
-
-        .id-card { background: #000; padding: 12px; border-radius: 8px; font-size: 10px; border: 1px solid #333; margin-bottom: 20px; color: var(--xenon); cursor: pointer; text-align: center; }
-        .controls { padding: 20px; background: var(--panel); border-top: 1px solid #222; display: flex; gap: 10px; }
-        input { flex: 1; padding: 12px; background: #000; border: 1px solid #333; color: #fff; border-radius: 8px; outline: none; }
-        .btn { padding: 10px 15px; background: var(--xenon); border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: #000; }
-
+        .btn { padding: 10px; background: var(--xenon); border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: #000; width: 100%; }
         #login { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; align-items: center; justify-content: center; }
+        .debug-tag { font-size: 9px; color: #444; text-transform: uppercase; margin-top: 10px; }
     </style>
 </head>
 <body>
 
     <div id="login">
         <div style="background:#0a0a0a; padding:40px; border-radius:15px; border:1px solid #222; text-align:center; width:340px;">
-            <h1 style="color:var(--xenon); letter-spacing:4px;">XENON</h1>
-            <input type="text" id="user-in" placeholder="Username..." style="width:100%; margin:20px 0; padding:12px; background:#000; border:1px solid #333; color:#fff; border-radius:8px;">
-            <button class="btn" style="width:100%;" onclick="boot()">INITIALIZE</button>
+            <h1 style="color:var(--xenon)">XENON</h1>
+            <input type="text" id="user-in" placeholder="Username..." style="width:100%; margin:20px 0; padding:12px; background:#000; border:1px solid #333; color:#fff;">
+            <button class="btn" onclick="boot()">BOOT SYSTEM</button>
         </div>
     </div>
 
     <div id="app">
-        <div class="rail"><div style="color:var(--xenon); font-weight:bold; margin-top:20px;">X</div></div>
-
         <div class="side">
-            <div class="id-card" id="my-id" onclick="copyID()">BOOTING...</div>
-            <input type="text" id="target-id" placeholder="uuid://friend-id" style="width:100%; padding:10px; background:#000; color:#fff; border:1px solid #333; font-size:12px; border-radius:5px;">
-            <button class="btn" style="width:100%; margin-top:10px;" onclick="connect()">CONNECT PEER</button>
+            <div id="my-id" style="font-size:10px; color:var(--xenon); margin-bottom:15px; cursor:pointer;" onclick="copyID()">Generating...</div>
+            <input type="text" id="target-id" placeholder="Target UUID" style="padding:10px; background:#000; border:1px solid #333; color:#fff; margin-bottom:10px; font-size:12px;">
+            <button class="btn" onclick="connect()" style="background:#111; color:var(--xenon); border:1px solid var(--xenon)">LINK PEER</button>
             
-            <button class="btn" onclick="sendInvite()" style="width:100%; margin-top:20px; background:#111; color:var(--xenon); border:1px solid var(--xenon)">SEND CALL INVITE</button>
-            
-            <input type="file" id="media-in" style="display:none" accept="image/*,video/*" onchange="sendMedia(this)">
-            <button class="btn" style="margin-top:auto; width:100%; background:#222; color:#fff;" onclick="document.getElementById('media-in').click()">ATTACH MEDIA</button>
+            <div style="margin-top:25px;">
+                <button class="btn" onclick="initiateCall()">OPEN CALL PORT</button>
+                <div class="debug-tag">System Status: <span id="sys-stat" style="color:var(--xenon)">Idle</span></div>
+            </div>
+
+            <button class="btn" style="margin-top:auto; background:#222; color:#fff;" onclick="document.getElementById('m-in').click()">ATTACH MEDIA</button>
+            <input type="file" id="m-in" style="display:none" onchange="sendMedia(this)">
         </div>
 
         <div class="main">
-            <div id="call-overlay">
-                <video id="remote-v" autoplay playsinline></video>
-                <video id="local-v" autoplay muted playsinline></video>
-                <button onclick="endCall()" style="width:100%; background:var(--red); border:none; color:#fff; padding:5px; cursor:pointer;">DISCONNECT</button>
+            <div id="call-ui">
+                <div class="v-container">
+                    <video id="remote-v" autoplay playsinline></video>
+                    <video id="local-v" autoplay muted playsinline></video>
+                </div>
+                <div class="call-btns">
+                    <button class="c-btn" onclick="endCall()" style="background:var(--red)">DISCONNECT</button>
+                </div>
             </div>
             
             <div id="chat-flow"></div>
 
-            <div class="controls">
-                <input type="text" id="chat-in" placeholder="Message..." onkeypress="if(event.key==='Enter') sendText()">
-                <button class="btn" onclick="sendText()">SEND</button>
+            <div style="padding:20px; background:var(--panel); display:flex; gap:10px;">
+                <input type="text" id="chat-in" placeholder="Transmit..." style="flex:1; padding:12px; background:#000; border:1px solid #333; color:#fff;" onkeypress="if(event.key==='Enter') sendText()">
+                <button class="btn" style="width:80px;" onclick="sendText()">SEND</button>
             </div>
         </div>
     </div>
@@ -88,43 +82,93 @@
 
         function boot() {
             user = document.getElementById('user-in').value || "Agent";
-            peer = new Peer();
+            peer = new Peer({
+                config: {'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }]} // CRITICAL FOR REAL WEB CALLS
+            });
+            
             peer.on('open', id => {
                 document.getElementById('my-id').innerText = "uuid://" + id;
                 document.getElementById('login').style.display = 'none';
                 document.getElementById('app').style.display = 'flex';
+                updateStat("Online");
+            });
+
+            peer.on('error', err => {
+                pushSys("ERROR: " + err.type);
+                console.error(err);
+            });
+
+            // HANDLE INCOMING CALLS
+            peer.on('call', async call => {
+                updateStat("Incoming Stream...");
+                const stream = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
+                myStream = stream;
+                call.answer(stream);
+                showCallUI(stream);
+                call.on('stream', rs => document.getElementById('remote-v').srcObject = rs);
             });
 
             peer.on('connection', c => { conn = c; setupConn(); });
-
-            peer.on('call', call => {
-                navigator.mediaDevices.getUserMedia({video:true, audio:true}).then(s => {
-                    myStream = s;
-                    call.answer(s);
-                    document.getElementById('call-overlay').style.display = 'block';
-                    document.getElementById('local-v').srcObject = s;
-                    call.on('stream', rs => document.getElementById('remote-v').srcObject = rs);
-                });
-            });
         }
 
         function connect() {
             const tid = document.getElementById('target-id').value.replace('uuid://','').trim();
-            conn = peer.connect(tid, {metadata: {user: user}});
+            if(!tid) return alert("Enter a ID");
+            conn = peer.connect(tid, {metadata: {u: user}});
             setupConn();
         }
 
         function setupConn() {
             conn.on('open', () => {
-                pushSys("PEER LINK ACTIVE");
+                pushSys("Connected to " + (conn.metadata?.u || "Peer"));
                 conn.on('data', data => {
                     if(data.type === 'text') pushMsg(data.u, data.v);
-                    if(data.type === 'media') pushMedia(data.u, data.v, data.kind);
+                    if(data.type === 'media') pushMedia(data.u, data.v, data.k);
                     if(data.type === 'invite') pushInvite(data.u);
                 });
             });
         }
 
+        async function initiateCall() {
+            if(!conn) return alert("Link a Peer first!");
+            updateStat("Acquiring Media...");
+            try {
+                myStream = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
+                showCallUI(myStream);
+                conn.send({type: 'invite', u: user});
+                pushInvite(user, true);
+            } catch(e) {
+                alert("Camera/Mic Blocked! Check browser permissions.");
+                updateStat("Hardware Error");
+            }
+        }
+
+        async function joinCall() {
+            const tid = document.getElementById('target-id').value.replace('uuid://','').trim();
+            updateStat("Syncing Stream...");
+            myStream = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
+            showCallUI(myStream);
+            const call = peer.call(tid, myStream);
+            call.on('stream', rs => {
+                document.getElementById('remote-v').srcObject = rs;
+                updateStat("Live Link Active");
+            });
+        }
+
+        function showCallUI(stream) {
+            document.getElementById('call-ui').style.display = 'block';
+            document.getElementById('local-v').srcObject = stream;
+        }
+
+        function endCall() {
+            document.getElementById('call-ui').style.display = 'none';
+            if(myStream) myStream.getTracks().forEach(t => t.stop());
+            updateStat("Call Ended");
+        }
+
+        function updateStat(t) { document.getElementById('sys-stat').innerText = t; }
+
+        /* Media & Text Logic */
         function sendText() {
             const i = document.getElementById('chat-in');
             if(conn && i.value) {
@@ -136,77 +180,20 @@
 
         function sendMedia(input) {
             const file = input.files[0];
-            const kind = file.type.startsWith('video') ? 'video' : 'image';
             const reader = new FileReader();
             reader.onload = () => {
-                conn.send({type:'media', u:user, v:reader.result, kind: kind});
-                pushMedia(user, reader.result, kind, true);
+                const k = file.type.startsWith('video') ? 'v' : 'i';
+                conn.send({type:'media', u:user, v:reader.result, k: k});
+                pushMedia(user, reader.result, k, true);
             };
             reader.readAsDataURL(file);
         }
 
-        function sendInvite() {
-            if(conn) {
-                conn.send({type:'invite', u:user});
-                pushInvite(user, true);
-            }
-        }
-
-        async function joinCall() {
-            const tid = document.getElementById('target-id').value.replace('uuid://','').trim();
-            myStream = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
-            document.getElementById('call-overlay').style.display = 'block';
-            document.getElementById('local-v').srcObject = myStream;
-            const call = peer.call(tid, myStream);
-            call.on('stream', rs => document.getElementById('remote-v').srcObject = rs);
-        }
-
-        function endCall() {
-            document.getElementById('call-overlay').style.display = 'none';
-            if(myStream) myStream.getTracks().forEach(t => t.stop());
-        }
-
-        function pushMsg(u, v, me=false) {
-            const f = document.getElementById('chat-flow');
-            const d = document.createElement('div');
-            d.className = `msg ${me?'me':''}`;
-            d.innerHTML = `<small style="color:var(--xenon)">${u}</small><br>${v}`;
-            f.appendChild(d);
-        }
-
-        function pushMedia(u, v, kind, me=false) {
-            const f = document.getElementById('chat-flow');
-            const d = document.createElement('div');
-            d.className = `msg ${me?'me':''}`;
-            const tag = kind === 'video' ? `<video src="${v}" controls></video>` : `<img src="${v}">`;
-            d.innerHTML = `<small style="color:var(--xenon)">${u}</small>${tag}`;
-            f.appendChild(d);
-        }
-
-        function pushInvite(u, me=false) {
-            const f = document.getElementById('chat-flow');
-            const d = document.createElement('div');
-            d.className = `msg ${me?'me':''}`;
-            d.innerHTML = `
-                <div class="invite-box">
-                    <p style="font-size:12px;"><b>${u}</b> is requesting a Video Link</p>
-                    ${!me ? `<button class="join-btn" onclick="joinCall()">JOIN PORT</button>` : `<small>Invitation Sent...</small>`}
-                </div>`;
-            f.appendChild(d);
-        }
-
-        function pushSys(t) {
-            const f = document.getElementById('chat-flow');
-            const d = document.createElement('div');
-            d.style = "text-align:center; color:#444; font-size:11px; margin:10px 0;";
-            d.innerText = "[ " + t + " ]";
-            f.appendChild(d);
-        }
-
-        function copyID() {
-            navigator.clipboard.writeText(document.getElementById('my-id').innerText);
-            alert("UUID Copied.");
-        }
+        function pushMsg(u,v,m=false){ const f=document.getElementById('chat-flow'); const d=document.createElement('div'); d.className=`msg ${m?'me':''}`; d.innerHTML=`<small style="color:var(--xenon)">${u}</small><br>${v}`; f.appendChild(d); }
+        function pushMedia(u,v,k,m=false){ const f=document.getElementById('chat-flow'); const d=document.createElement('div'); d.className=`msg ${m?'me':''}`; const tag=k==='v'?`<video src="${v}" controls></video>`:`<img src="${v}">`; d.innerHTML=`<small style="color:var(--xenon)">${u}</small>${tag}`; f.appendChild(d); }
+        function pushInvite(u, m=false){ const f=document.getElementById('chat-flow'); const d=document.createElement('div'); d.className=`msg ${m?'me':''}`; d.innerHTML=`<div style="border:1px dashed var(--xenon);padding:10px;text-align:center;"><b>${u}</b> is calling.<br>${!m?`<button class="btn" style="margin-top:5px" onclick="joinCall()">JOIN</button>`:`<small>Waiting for peer...</small>`}</div>`; f.appendChild(d); }
+        function pushSys(t){ const f=document.getElementById('chat-flow'); const d=document.createElement('div'); d.style="text-align:center;color:#444;font-size:10px;margin:10px 0;"; d.innerText="[ "+t+" ]"; f.appendChild(d); }
+        function copyID(){ navigator.clipboard.writeText(document.getElementById('my-id').innerText); alert("ID Copied."); }
     </script>
 </body>
 </html>
