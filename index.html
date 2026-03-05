@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xenon Onyx | Unified P2P</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        :root { --onyx: #050505; --panel: #111112; --xenon: #00f2ff; --accent: #7000ff; --glass: rgba(255,255,255,0.03); }
+        * { box-sizing: border-box; transition: 0.2s; }
+        body, html { margin: 0; padding: 0; height: 100%; background: var(--onyx); color: #fff; font-family: 'Inter', sans-serif; overflow: hidden; }
+        
+        #app { display: none; height: 100vh; grid-template-columns: 72px 240px 1fr; }
+
+        /* Left Rail */
+        .rail { background: #000; display: flex; flex-direction: column; align-items: center; padding: 12px 0; border-right: 1px solid #222; gap: 12px; }
+        .s-btn { width: 48px; height: 48px; background: #1a1a1a; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid #333; font-size: 12px; position: relative; }
+        .s-btn:hover, .s-btn.active { border-radius: 15px; border-color: var(--xenon); color: var(--xenon); background: var(--glass); }
+        .s-btn.add { color: #444; font-size: 20px; border-style: dashed; }
+
+        /* Sidebar */
+        .side { background: var(--panel); border-right: 1px solid #222; display: flex; flex-direction: column; padding: 15px; }
+        .id-card { background: #000; padding: 10px; border-radius: 8px; font-size: 10px; border: 1px solid #222; margin-bottom: 20px; color: var(--xenon); cursor: pointer; }
+        
+        /* Chat Area */
+        .main { display: flex; flex-direction: column; background: var(--onyx); position: relative; }
+        #chat-flow { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .msg { padding: 10px 14px; border-radius: 12px; background: #161618; border: 1px solid #222; max-width: 70%; position: relative; }
+        .msg.me { align-self: flex-end; border-color: var(--xenon); background: #0a1a1b; }
+        .msg img, .msg video { max-width: 100%; border-radius: 8px; margin-top: 5px; }
+        .u-name { font-size: 10px; color: var(--xenon); display: block; margin-bottom: 3px; font-weight: bold; }
+
+        /* Media Overlay */
+        #media-wrap { position: absolute; top: 10px; right: 10px; width: 200px; z-index: 5; display: flex; flex-direction: column; gap: 5px; }
+        video#remote-v { width: 100%; border-radius: 8px; border: 1px solid var(--xenon); background: #000; display: none; }
+
+        /* Inputs */
+        .controls { padding: 20px; background: var(--onyx); border-top: 1px solid #222; display: flex; gap: 10px; }
+        input { flex: 1; padding: 12px; background: #111; border: 1px solid #333; color: #fff; border-radius: 8px; outline: none; }
+        .act-btn { padding: 10px 15px; background: var(--xenon); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #000; }
+        
+        /* Modals */
+        #login-screen, .modal { position: fixed; inset: 0; background: #000; z-index: 100; display: flex; align-items: center; justify-content: center; }
+        .modal-body { background: #111; padding: 30px; border-radius: 15px; border: 1px solid #333; width: 320px; }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <div class="modal-body">
+            <h2 style="color: var(--xenon); text-align: center;">XENON ONYX</h2>
+            <input type="text" id="user-in" placeholder="Username">
+            <button class="act-btn" style="width:100%; margin-top:10px;" onclick="initApp()">BOOT SYSTEM</button>
+        </div>
+    </div>
+
+    <div id="app">
+        <div class="rail" id="server-rail">
+            <div class="s-btn active" onclick="location.reload()">H</div>
+            <div class="s-btn add" onclick="showModal()">+</div>
+        </div>
+
+        <div class="side">
+            <div class="id-card" id="my-id" onclick="copyID()">uuid://initializing...</div>
+            <p style="font-size: 11px; color: #444;">PEER SYNC</p>
+            <input type="text" id="peer-id-in" placeholder="Enter Target UUID" style="margin-bottom:5px;">
+            <button class="act-btn" onclick="connectPeer()" style="width:100%;">LINK PEER</button>
+            <div style="margin-top:20px; display:flex; flex-direction:column; gap:5px;">
+                <button class="act-btn" style="background:#a0a" onclick="startCall('video')">VIDEO</button>
+                <button class="act-btn" style="background:#555" onclick="startCall('screen')">SCREEN</button>
+                <input type="file" id="file-in" style="display:none" onchange="sendFile(this)">
+                <button class="act-btn" style="background:#222; color:#fff" onclick="document.getElementById('file-in').click()">SEND IMG/VID</button>
+            </div>
+        </div>
+
+        <div class="main">
+            <div id="media-wrap">
+                <video id="remote-v" autoplay playsinline></video>
+                <video id="local-v" autoplay muted playsinline style="width:60px; align-self:flex-end; border-radius:5px;"></video>
+            </div>
+            <div id="chat-flow"></div>
+            <div class="controls">
+                <input type="text" id="chat-in" placeholder="Write to Onyx..." onkeypress="if(event.key==='Enter') sendText()">
+                <button class="act-btn" onclick="sendText()">SEND</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="s-modal" class="modal" style="display:none">
+        <div class="modal-body">
+            <h3>New Seeded Server</h3>
+            <input type="text" id="s-name" placeholder="Server Name">
+            <button class="act-btn" onclick="addServer()" style="width:100%">GENERATE</button>
+            <button class="act-btn" onclick="hideModal()" style="width:100%; background:#333; color:#fff; margin-top:5px;">CLOSE</button>
+        </div>
+    </div>
+
+    <script>
+        let peer, conn, myName, localStream;
+        let servers = JSON.parse(localStorage.getItem('xo_servers') || '[]');
+
+        function initApp() {
+            myName = document.getElementById('user-in').value || "Guest";
+            peer = new Peer();
+            peer.on('open', id => {
+                document.getElementById('my-id').innerText = "uuid://" + id;
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('app').style.display = 'grid';
+                renderServers();
+                window.history.pushState({}, "", "/login/" + myName);
+            });
+
+            peer.on('connection', c => {
+                conn = c;
+                setupData();
+            });
+
+            peer.on('call', call => {
+                if(confirm("Accept incoming Xenon Stream?")) {
+                    navigator.mediaDevices.getUserMedia({video:true, audio:true}).then(s => {
+                        call.answer(s);
+                        call.on('stream', rs => displayRemote(rs));
+                    });
+                }
+            });
+        }
+
+        function showModal() { document.getElementById('s-modal').style.display='flex'; }
+        function hideModal() { document.getElementById('s-modal').style.display='none'; }
+
+        function addServer() {
+            const n = document.getElementById('s-name').value;
+            if(!n) return;
+            servers.push({id: Date.now(), name: n.substring(0,2).toUpperCase(), full: n});
+            localStorage.setItem('xo_servers', JSON.stringify(servers));
+            renderServers();
+            hideModal();
+        }
+
+        function renderServers() {
+            const r = document.getElementById('server-rail');
+            const btns = r.querySelectorAll('.s-btn');
+            btns.forEach((b,i) => { if(i>1) b.remove(); });
+            servers.forEach(s => {
+                const d = document.createElement('div');
+                d.className = 's-btn';
+                d.innerText = s.name;
+                d.onclick = () => alert(`Server: ${s.full}\nNote: To chat here, Link the Peer ID of friends in this server.`);
+                r.appendChild(d);
+            });
+        }
+
+        function connectPeer() {
+            const tid = document.getElementById('peer-id-in').value.replace('uuid://','');
+            conn = peer.connect(tid, {metadata: {name: myName}});
+            setupData();
+        }
+
+        function setupData() {
+            conn.on('open', () => {
+                pushMsg("System", "Tunnel Secure.");
+                conn.on('data', data => {
+                    if(data.type === 'text') pushMsg(data.user, data.val);
+                    if(data.type === 'file') pushFile(data.user, data.val, data.fileType);
+                });
+            });
+        }
+
+        function sendText() {
+            const i = document.getElementById('chat-in');
+            if(conn && i.value) {
+                conn.send({type:'text', user:myName, val:i.value});
+                pushMsg(myName, i.value, true);
+                i.value = "";
+            }
+        }
+
+        function sendFile(input) {
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = () => {
+                conn.send({type:'file', user:myName, val: reader.result, fileType: file.type});
+                pushFile(myName, reader.result, file.type, true);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function startCall(type) {
+            const tid = document.getElementById('peer-id-in').value.replace('uuid://','');
+            localStream = (type === 'video') 
+                ? await navigator.mediaDevices.getUserMedia({video:true, audio:true})
+                : await navigator.mediaDevices.getDisplayMedia({video:true});
+            
+            document.getElementById('local-v').srcObject = localStream;
+            const call = peer.call(tid, localStream);
+            call.on('stream', rs => displayRemote(rs));
+        }
+
+        function displayRemote(rs) {
+            const rv = document.getElementById('remote-v');
+            rv.style.display = 'block';
+            rv.srcObject = rs;
+        }
+
+        function pushMsg(u, v, me=false) {
+            const f = document.getElementById('chat-flow');
+            const d = document.createElement('div');
+            d.className = `msg ${me?'me':''}`;
+            d.innerHTML = `<span class="u-name">${u}</span>${v}`;
+            f.appendChild(d);
+            f.scrollTop = f.scrollHeight;
+        }
+
+        function pushFile(u, v, type, me=false) {
+            const f = document.getElementById('chat-flow');
+            const d = document.createElement('div');
+            d.className = `msg ${me?'me':''}`;
+            const tag = type.startsWith('video') ? `<video src="${v}" controls></video>` : `<img src="${v}">`;
+            d.innerHTML = `<span class="u-name">${u}</span>${tag}`;
+            f.appendChild(d);
+            f.scrollTop = f.scrollHeight;
+        }
+
+        function copyID() {
+            navigator.clipboard.writeText(document.getElementById('my-id').innerText);
+            alert("ID Copied!");
+        }
+    </script>
+</body>
+</html>
