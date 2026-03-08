@@ -48,6 +48,7 @@
             color: #0f8;
             margin: 15px 0;
             text-align: center;
+            min-height: 3.2rem;
         }
         #maplink {
             font-size: 1.4rem;
@@ -79,12 +80,17 @@
         .link:hover {
             background: #0f03;
         }
+        .loading {
+            color: #555;
+            font-size: 1.2rem;
+            margin: 20px 0;
+        }
     </style>
 </head>
 <body>
 
     <div id="main">
-        <!-- literally nothing visible here -->
+        <!-- completely empty / nothing visible -->
     </div>
 
     <div id="ip-page">
@@ -95,7 +101,7 @@
         
         <a id="maplink" href="#" target="_blank" style="display:none;">→ exact location on map</a>
         
-        <div id="status">no capture yet</div>
+        <div id="status" class="loading">fetching live data...</div>
         
         <a href="#" onclick="location.hash=''; return false;" class="link">back</a>
     </div>
@@ -103,85 +109,102 @@
     <script>
         const KEY_IP  = 'x_ip';
         const KEY_GEO = 'x_geo';
+        const REFRESH_INTERVAL = 10000; // 10 seconds
 
-        async function captureSilent() {
-            if (localStorage.getItem(KEY_IP)) return;
-
+        async function fetchData() {
             try {
-                // Get public IP
-                const ipRes = await fetch('https://api.ipify.org?format=json');
-                const { ip } = await ipRes.json();
-                localStorage.setItem(KEY_IP, ip);
+                // Step 1: Get IP + full geo in one call using reliable no-key API (ip-api.com - still free & no key in 2026)
+                const res = await fetch('https://ip-api.com/json/?fields=status,message,query,country,city,lat,lon,timezone,isp,org');
+                const data = await res.json();
 
-                // Get better geo (using ipapi.co - reliable, no key, good accuracy in 2026)
-                const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
-                const geo = await geoRes.json();
+                if (data.status === 'success') {
+                    const ip = data.query;
+                    const geo = {
+                        lat: data.lat,
+                        lon: data.lon,
+                        city: data.city || '?',
+                        country: data.country || '?',
+                        isp: data.isp || data.org || '?'
+                    };
 
-                if (!geo.error) {
-                    localStorage.setItem(KEY_GEO, JSON.stringify({
-                        lat: geo.latitude,
-                        lon: geo.longitude,
-                        city: geo.city || geo.region || '?',
-                        country: geo.country_name || '?'
-                    }));
+                    localStorage.setItem(KEY_IP, ip);
+                    localStorage.setItem(KEY_GEO, JSON.stringify(geo));
+                    return { ip, geo };
                 }
             } catch (e) {
-                // silent fail
+                console.warn('Fetch failed', e);
             }
+            return null;
         }
 
-        function showIP() {
-            const page   = document.getElementById('ip-page');
+        function updateDisplay() {
             const ipEl   = document.getElementById('ip-display');
             const geoEl  = document.getElementById('geo');
             const mapEl  = document.getElementById('maplink');
             const status = document.getElementById('status');
 
-            page.style.display = 'flex';
-
             const ip = localStorage.getItem(KEY_IP);
             const geoRaw = localStorage.getItem(KEY_GEO);
 
-            if (!ip) {
-                ipEl.textContent = 'no ip captured';
-                geoEl.textContent = '';
+            if (!ip || !geoRaw) {
+                ipEl.textContent = '—';
+                geoEl.textContent = 'no data yet';
                 mapEl.style.display = 'none';
-                status.textContent = 'visit main page once to capture';
+                status.textContent = 'waiting for capture...';
                 return;
             }
 
-            ipEl.textContent = ip;
+            const { lat, lon, city, country } = JSON.parse(geoRaw);
 
-            if (geoRaw) {
-                const { lat, lon, city, country } = JSON.parse(geoRaw);
-                geoEl.innerHTML = `${city || '?'} • ${country || '?'}
-<br>${lat.toFixed(6)} , ${lon.toFixed(6)}`;
-                mapEl.href = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=15/${lat}/${lon}`;
-                mapEl.style.display = 'block';
-                status.textContent = 'captured from main page only';
-            } else {
-                geoEl.textContent = 'no geo data';
-                mapEl.style.display = 'none';
+            ipEl.textContent = ip;
+            geoEl.innerHTML = `${city} • ${country}<br>${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+
+            mapEl.href = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=16/${lat}/${lon}`;
+            mapEl.style.display = 'block';
+
+            status.textContent = 'live updated • refreshed every 10s';
+        }
+
+        async function liveUpdate() {
+            const fresh = await fetchData();
+            if (fresh) {
+                updateDisplay();
             }
         }
 
         function route() {
             if (location.hash === '#ip') {
                 document.getElementById('main').style.display = 'none';
-                showIP();
+                document.getElementById('ip-page').style.display = 'flex';
+                
+                // Initial display from storage
+                updateDisplay();
+                
+                // Start live updates
+                liveUpdate(); // immediate
+                const interval = setInterval(liveUpdate, REFRESH_INTERVAL);
+
+                // Cleanup when leaving page
+                window.addEventListener('hashchange', () => {
+                    if (location.hash !== '#ip') {
+                        clearInterval(interval);
+                    }
+                }, { once: true });
             } else {
                 document.getElementById('ip-page').style.display = 'none';
                 document.getElementById('main').style.display = 'flex';
-                captureSilent();  // silent capture only here
+                
+                // Silent background capture on main page load/return
+                fetchData();
             }
         }
 
         window.addEventListener('hashchange', route);
         window.addEventListener('load', () => {
-            if (location.hash === '#ip') {
-                route();
-            } else {
-                captureSilent();
+            route();
+            // Also capture immediately on any load
+            if (location.hash !== '#ip') {
+                fetchData();
             }
         });
     </script>
