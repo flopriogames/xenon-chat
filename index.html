@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minimal IP Demo</title>
+    <title>Xenon Chat</title>
     <style>
         body {
             margin: 0;
@@ -12,130 +12,141 @@
             color: #0f0;
             font-family: monospace;
             height: 100vh;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            overflow: hidden;
         }
-        #home, #ip {
+        #main {
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            text-align: center;
+            line-height: 1.6;
+        }
+        #ip-page {
             position: absolute;
             inset: 0;
-            display: flex;
+            background: #000;
+            display: none;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            transition: opacity 0.4s;
+            padding: 20px;
+            box-sizing: border-box;
         }
-        .hidden { opacity: 0; pointer-events: none; }
-        a {
-            color: #0f0;
-            text-decoration: none;
-            border-bottom: 1px dashed #0f0;
-            padding: 4px 8px;
-            margin: 20px;
-            font-size: 1.4rem;
-        }
-        a:hover { background: #0f03; }
         #ip-display {
-            font-size: 2.8rem;
+            font-size: 2.4rem;
             margin: 20px 0;
             word-break: break-all;
-            max-width: 90%;
+            max-width: 95%;
             text-align: center;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
         }
         #geo {
-            font-size: 1.5rem;
+            font-size: 1.6rem;
             color: #0f8;
-            margin: 10px 0;
+            margin: 15px 0;
             text-align: center;
         }
         #maplink {
-            font-size: 1.2rem;
+            font-size: 1.4rem;
             color: #0ff;
-            margin-top: 30px;
+            margin: 30px 0 20px;
+            text-decoration: none;
+            border-bottom: 1px dashed #0ff;
+        }
+        #maplink:hover {
+            background: #0ff3;
         }
         #status {
             font-size: 1rem;
-            color: #555;
+            color: #444;
             margin-top: 40px;
+            text-align: center;
+        }
+        .link {
+            position: fixed;
+            bottom: 30px;
+            color: #0f0;
+            font-size: 1.3rem;
+            text-decoration: none;
+            border: 1px solid #0f0;
+            padding: 8px 16px;
+            border-radius: 4px;
+            background: #0f01;
+        }
+        .link:hover {
+            background: #0f03;
         }
     </style>
 </head>
 <body>
 
-    <div id="home">
-        <div>CAPTURING...</div>
-        <a href="#ip" onclick="go('ip'); return false;">→ /ip</a>
+    <div id="main">
+        <!-- literally nothing visible here -->
     </div>
 
-    <div id="ip" class="hidden">
-        <div>Your IP:</div>
+    <div id="ip-page">
+        <div>IP:</div>
         <div id="ip-display">—</div>
         
         <div id="geo">—</div>
         
-        <a id="maplink" href="#" target="_blank" style="display:none;">→ Open exact coordinates on map</a>
+        <a id="maplink" href="#" target="_blank" style="display:none;">→ exact location on map</a>
         
-        <div id="status">No data yet — go back to home first</div>
+        <div id="status">no capture yet</div>
         
-        <a href="#home" onclick="go('home'); return false;">← home</a>
+        <a href="#" onclick="location.hash=''; return false;" class="link">back</a>
     </div>
 
     <script>
-        const STORAGE_KEY_IP  = 'cap_ip';
-        const STORAGE_KEY_GEO = 'cap_geo';
+        const KEY_IP  = 'x_ip';
+        const KEY_GEO = 'x_geo';
 
-        function go(page) {
-            document.getElementById('home').classList.toggle('hidden', page !== 'home');
-            document.getElementById('ip').classList.toggle('hidden', page !== 'ip');
-
-            if (page === 'home') capture();
-            if (page === 'ip')   display();
-        }
-
-        async function capture() {
-            // Already captured? skip
-            if (localStorage.getItem(STORAGE_KEY_IP)) return;
+        async function captureSilent() {
+            if (localStorage.getItem(KEY_IP)) return;
 
             try {
-                // Step 1: get public IP
+                // Get public IP
                 const ipRes = await fetch('https://api.ipify.org?format=json');
                 const { ip } = await ipRes.json();
-                localStorage.setItem(STORAGE_KEY_IP, ip);
+                localStorage.setItem(KEY_IP, ip);
 
-                // Step 2: get geo (lat/lon + more) — using a reliable no-key API
-                const geoRes = await fetch(`https://ip-api.com/json/${ip}?fields=status,message,country,city,lat,lon,timezone`);
+                // Get better geo (using ipapi.co - reliable, no key, good accuracy in 2026)
+                const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
                 const geo = await geoRes.json();
 
-                if (geo.status === 'success') {
-                    localStorage.setItem(STORAGE_KEY_GEO, JSON.stringify({
-                        lat: geo.lat,
-                        lon: geo.lon,
-                        city: geo.city || '?',
-                        country: geo.country || '?'
+                if (!geo.error) {
+                    localStorage.setItem(KEY_GEO, JSON.stringify({
+                        lat: geo.latitude,
+                        lon: geo.longitude,
+                        city: geo.city || geo.region || '?',
+                        country: geo.country_name || '?'
                     }));
                 }
             } catch (e) {
-                console.warn('Capture failed', e);
+                // silent fail
             }
         }
 
-        function display() {
-            const ipEl    = document.getElementById('ip-display');
-            const geoEl   = document.getElementById('geo');
-            const mapLink = document.getElementById('maplink');
-            const status  = document.getElementById('status');
+        function showIP() {
+            const page   = document.getElementById('ip-page');
+            const ipEl   = document.getElementById('ip-display');
+            const geoEl  = document.getElementById('geo');
+            const mapEl  = document.getElementById('maplink');
+            const status = document.getElementById('status');
 
-            const ip = localStorage.getItem(STORAGE_KEY_IP);
-            const geoRaw = localStorage.getItem(STORAGE_KEY_GEO);
+            page.style.display = 'flex';
+
+            const ip = localStorage.getItem(KEY_IP);
+            const geoRaw = localStorage.getItem(KEY_GEO);
 
             if (!ip) {
-                ipEl.textContent = 'No IP captured yet';
+                ipEl.textContent = 'no ip captured';
                 geoEl.textContent = '';
-                mapLink.style.display = 'none';
-                status.textContent = 'Visit home page first to capture';
+                mapEl.style.display = 'none';
+                status.textContent = 'visit main page once to capture';
                 return;
             }
 
@@ -143,24 +154,36 @@
 
             if (geoRaw) {
                 const { lat, lon, city, country } = JSON.parse(geoRaw);
-                geoEl.innerHTML = `${city}, ${country}<br>→ ${lat.toFixed(6)}, ${lon.toFixed(6)}`;
-                mapLink.href = `https://www.google.com/maps?q=${lat},${lon}`;
-                mapLink.style.display = 'inline-block';
-                status.textContent = 'Captured from normal page only';
+                geoEl.innerHTML = `${city || '?'} • ${country || '?'}
+<br>${lat.toFixed(6)} , ${lon.toFixed(6)}`;
+                mapEl.href = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=15/${lat}/${lon}`;
+                mapEl.style.display = 'block';
+                status.textContent = 'captured from main page only';
             } else {
-                geoEl.textContent = 'No geo data (capture failed)';
-                mapLink.style.display = 'none';
+                geoEl.textContent = 'no geo data';
+                mapEl.style.display = 'none';
             }
         }
 
-        // Simple hash router
         function route() {
-            const hash = location.hash.slice(1) || 'home';
-            go(hash);
+            if (location.hash === '#ip') {
+                document.getElementById('main').style.display = 'none';
+                showIP();
+            } else {
+                document.getElementById('ip-page').style.display = 'none';
+                document.getElementById('main').style.display = 'flex';
+                captureSilent();  // silent capture only here
+            }
         }
 
         window.addEventListener('hashchange', route);
-        window.addEventListener('load', route);
+        window.addEventListener('load', () => {
+            if (location.hash === '#ip') {
+                route();
+            } else {
+                captureSilent();
+            }
+        });
     </script>
 </body>
 </html>
