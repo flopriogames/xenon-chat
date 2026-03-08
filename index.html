@@ -3,197 +3,149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Xenon Onyx | Hardened Call</title>
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <title>Demo Site</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root { --onyx: #050505; --panel: #0c0c0d; --xenon: #00f2ff; --red: #ff3b3b; }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: var(--onyx); color: #fff; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; }
-        
-        #app { display: none; height: 100vh; width: 100vw; flex-direction: row; }
-        .side { width: 280px; background: var(--panel); border-right: 1px solid #1a1a1a; display: flex; flex-direction: column; padding: 15px; flex-shrink: 0; }
-        .main { flex-grow: 1; display: flex; flex-direction: column; background: var(--onyx); position: relative; }
-        
-        #chat-flow { flex: 1; overflow-y: scroll; padding: 25px; display: flex; flex-direction: column; gap: 12px; }
-        .msg { padding: 12px; border-radius: 10px; background: #111; border: 1px solid #222; max-width: 80%; }
-        .msg.me { align-self: flex-end; border-color: var(--xenon); background: #0a1a1b; }
-
-        /* REBUILT CALL UI */
-        #call-ui { position: fixed; top: 20px; right: 20px; width: 340px; z-index: 999; display: none; background: #000; border: 2px solid var(--xenon); border-radius: 12px; box-shadow: 0 0 40px #000; overflow: hidden; }
-        .v-container { position: relative; width: 100%; background: #000; aspect-ratio: 16/9; }
-        video#remote-v { width: 100%; height: 100%; object-fit: cover; }
-        video#local-v { width: 90px; position: absolute; bottom: 10px; right: 10px; border: 1px solid #fff; border-radius: 4px; z-index: 1001; }
-        
-        .call-btns { display: flex; background: #050505; border-top: 1px solid #222; padding: 8px; gap: 8px; }
-        .c-btn { flex: 1; padding: 8px; font-size: 10px; font-weight: bold; cursor: pointer; border-radius: 4px; border: 1px solid #333; background: #111; color: #fff; }
-
-        .btn { padding: 10px; background: var(--xenon); border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: #000; width: 100%; }
-        #login { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; align-items: center; justify-content: center; }
-        .debug-tag { font-size: 9px; color: #444; text-transform: uppercase; margin-top: 10px; }
+        .page { display: none; }
+        .page.active { display: block; }
+        #ip-display { font-family: monospace; }
     </style>
 </head>
-<body>
+<body class="bg-zinc-950 text-white min-h-screen">
+    <nav class="bg-black border-b border-zinc-800 p-4 sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <a href="#home" class="text-2xl font-bold tracking-tight">MySite</a>
+            <div class="flex gap-8 text-sm font-medium">
+                <a href="#home" onclick="navigateTo('home')" class="hover:text-sky-400 transition">Normal Page</a>
+                <a href="#ip" onclick="navigateTo('ip')" class="hover:text-sky-400 transition">/ip</a>
+            </div>
+        </div>
+    </nav>
 
-    <div id="login">
-        <div style="background:#0a0a0a; padding:40px; border-radius:15px; border:1px solid #222; text-align:center; width:340px;">
-            <h1 style="color:var(--xenon)">XENON</h1>
-            <input type="text" id="user-in" placeholder="Username..." style="width:100%; margin:20px 0; padding:12px; background:#000; border:1px solid #333; color:#fff;">
-            <button class="btn" onclick="boot()">BOOT SYSTEM</button>
+    <!-- NORMAL PAGE (grabs IP silently) -->
+    <div id="home" class="page active min-h-[calc(100vh-73px)] flex items-center justify-center px-6">
+        <div class="max-w-lg text-center">
+            <div class="inline-flex items-center gap-2 bg-emerald-500/10 text-emerald-400 px-4 py-1 rounded-full text-sm mb-6">
+                <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                LIVE DEMO
+            </div>
+            <h1 class="text-5xl font-bold tracking-tighter mb-4">Normal Page</h1>
+            <p class="text-zinc-400 text-xl mb-12">
+                This is the regular homepage.<br>
+                <span class="text-sky-400">It silently grabs your public IP address</span> in the background.
+            </p>
+            <div class="bg-zinc-900 rounded-3xl p-8 border border-zinc-800">
+                <p class="text-zinc-500 text-sm mb-4">Click the link below to see it:</p>
+                <a href="#ip" onclick="navigateTo('ip')" 
+                   class="inline-flex items-center gap-3 bg-white text-black px-8 py-4 rounded-2xl font-semibold hover:bg-sky-400 hover:text-white transition text-lg">
+                    Go to /ip →
+                </a>
+            </div>
+            <p class="text-[10px] text-zinc-600 mt-12">No IP is shown here — it only captures and stores it.</p>
         </div>
     </div>
 
-    <div id="app">
-        <div class="side">
-            <div id="my-id" style="font-size:10px; color:var(--xenon); margin-bottom:15px; cursor:pointer;" onclick="copyID()">Generating...</div>
-            <input type="text" id="target-id" placeholder="Target UUID" style="padding:10px; background:#000; border:1px solid #333; color:#fff; margin-bottom:10px; font-size:12px;">
-            <button class="btn" onclick="connect()" style="background:#111; color:var(--xenon); border:1px solid var(--xenon)">LINK PEER</button>
+    <!-- /IP PAGE (shows the captured IP — does NOT grab it) -->
+    <div id="ip" class="page min-h-[calc(100vh-73px)] flex items-center justify-center px-6">
+        <div class="max-w-md w-full bg-zinc-900 rounded-3xl p-10 border border-zinc-800">
+            <h1 class="text-4xl font-bold mb-2 text-center">Your Public IP</h1>
+            <p class="text-zinc-500 text-center mb-8">Captured only from the normal page</p>
             
-            <div style="margin-top:25px;">
-                <button class="btn" onclick="initiateCall()">OPEN CALL PORT</button>
-                <div class="debug-tag">System Status: <span id="sys-stat" style="color:var(--xenon)">Idle</span></div>
+            <div id="ip-display" 
+                 class="bg-black rounded-2xl p-6 text-4xl font-mono tracking-widest text-center min-h-[80px] flex items-center justify-center border border-zinc-800">
+                Waiting for capture...
             </div>
 
-            <button class="btn" style="margin-top:auto; background:#222; color:#fff;" onclick="document.getElementById('m-in').click()">ATTACH MEDIA</button>
-            <input type="file" id="m-in" style="display:none" onchange="sendMedia(this)">
-        </div>
-
-        <div class="main">
-            <div id="call-ui">
-                <div class="v-container">
-                    <video id="remote-v" autoplay playsinline></video>
-                    <video id="local-v" autoplay muted playsinline></video>
-                </div>
-                <div class="call-btns">
-                    <button class="c-btn" onclick="endCall()" style="background:var(--red)">DISCONNECT</button>
-                </div>
+            <div id="copy-area" class="hidden mt-6 text-center">
+                <button onclick="copyToClipboard()" 
+                        class="bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-2xl text-sm font-medium transition">
+                    📋 Copy IP
+                </button>
             </div>
-            
-            <div id="chat-flow"></div>
 
-            <div style="padding:20px; background:var(--panel); display:flex; gap:10px;">
-                <input type="text" id="chat-in" placeholder="Transmit..." style="flex:1; padding:12px; background:#000; border:1px solid #333; color:#fff;" onkeypress="if(event.key==='Enter') sendText()">
-                <button class="btn" style="width:80px;" onclick="sendText()">SEND</button>
+            <div id="status" class="mt-8 text-center text-xs text-zinc-500">
+                Visit the Normal Page first to capture your IP
             </div>
         </div>
     </div>
 
     <script>
-        let peer, conn, user, myStream;
-
-        function boot() {
-            user = document.getElementById('user-in').value || "Agent";
-            peer = new Peer({
-                config: {'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }]} // CRITICAL FOR REAL WEB CALLS
-            });
+        // Tailwind script already loaded via CDN
+        function navigateTo(page) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(page).classList.add('active');
             
-            peer.on('open', id => {
-                document.getElementById('my-id').innerText = "uuid://" + id;
-                document.getElementById('login').style.display = 'none';
-                document.getElementById('app').style.display = 'flex';
-                updateStat("Online");
-            });
-
-            peer.on('error', err => {
-                pushSys("ERROR: " + err.type);
-                console.error(err);
-            });
-
-            // HANDLE INCOMING CALLS
-            peer.on('call', async call => {
-                updateStat("Incoming Stream...");
-                const stream = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
-                myStream = stream;
-                call.answer(stream);
-                showCallUI(stream);
-                call.on('stream', rs => document.getElementById('remote-v').srcObject = rs);
-            });
-
-            peer.on('connection', c => { conn = c; setupConn(); });
+            if (page === 'home') {
+                captureIP();           // ← ONLY the normal page grabs the IP
+            } else if (page === 'ip') {
+                showCapturedIP();
+            }
         }
 
-        function connect() {
-            const tid = document.getElementById('target-id').value.replace('uuid://','').trim();
-            if(!tid) return alert("Enter a ID");
-            conn = peer.connect(tid, {metadata: {u: user}});
-            setupConn();
-        }
-
-        function setupConn() {
-            conn.on('open', () => {
-                pushSys("Connected to " + (conn.metadata?.u || "Peer"));
-                conn.on('data', data => {
-                    if(data.type === 'text') pushMsg(data.u, data.v);
-                    if(data.type === 'media') pushMedia(data.u, data.v, data.k);
-                    if(data.type === 'invite') pushInvite(data.u);
-                });
-            });
-        }
-
-        async function initiateCall() {
-            if(!conn) return alert("Link a Peer first!");
-            updateStat("Acquiring Media...");
+        // Capture IP silently (runs only on normal page)
+        async function captureIP() {
+            if (localStorage.getItem('capturedIP')) return; // already captured
+            
             try {
-                myStream = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
-                showCallUI(myStream);
-                conn.send({type: 'invite', u: user});
-                pushInvite(user, true);
-            } catch(e) {
-                alert("Camera/Mic Blocked! Check browser permissions.");
-                updateStat("Hardware Error");
+                const response = await fetch('https://api.ipify.org?format=json', {
+                    method: 'GET',
+                    cache: 'no-store'
+                });
+                const data = await response.json();
+                localStorage.setItem('capturedIP', data.ip);
+                console.log('%cIP captured silently: ' + data.ip, 'color: #22c55e; font-size: 12px');
+            } catch (err) {
+                console.log('%cIP capture failed (no internet or blocked)', 'color: #ef4444');
             }
         }
 
-        async function joinCall() {
-            const tid = document.getElementById('target-id').value.replace('uuid://','').trim();
-            updateStat("Syncing Stream...");
-            myStream = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
-            showCallUI(myStream);
-            const call = peer.call(tid, myStream);
-            call.on('stream', rs => {
-                document.getElementById('remote-v').srcObject = rs;
-                updateStat("Live Link Active");
+        // Display on /ip page (does NOT fetch again)
+        function showCapturedIP() {
+            const display = document.getElementById('ip-display');
+            const copyArea = document.getElementById('copy-area');
+            const status = document.getElementById('status');
+            const storedIP = localStorage.getItem('capturedIP');
+
+            if (storedIP) {
+                display.textContent = storedIP;
+                display.classList.add('text-emerald-400');
+                copyArea.classList.remove('hidden');
+                status.innerHTML = '✅ Captured from normal page';
+            } else {
+                display.textContent = 'No IP yet';
+                display.classList.remove('text-emerald-400');
+                copyArea.classList.add('hidden');
+                status.innerHTML = `
+                    <span class="text-rose-400">Please visit the Normal Page first</span><br>
+                    <a href="#home" onclick="navigateTo('home')" class="underline">← Go capture it now</a>
+                `;
+            }
+        }
+
+        // Copy button
+        function copyToClipboard() {
+            const ip = localStorage.getItem('capturedIP');
+            if (!ip) return;
+            
+            navigator.clipboard.writeText(ip).then(() => {
+                const btn = document.querySelector('#copy-area button');
+                const original = btn.innerHTML;
+                btn.innerHTML = '✅ Copied!';
+                setTimeout(() => btn.innerHTML = original, 2000);
             });
         }
 
-        function showCallUI(stream) {
-            document.getElementById('call-ui').style.display = 'block';
-            document.getElementById('local-v').srcObject = stream;
+        // Routing with hash (works perfectly in browser, no server needed)
+        function handleHash() {
+            const hash = window.location.hash.substring(1) || 'home';
+            navigateTo(hash);
         }
 
-        function endCall() {
-            document.getElementById('call-ui').style.display = 'none';
-            if(myStream) myStream.getTracks().forEach(t => t.stop());
-            updateStat("Call Ended");
-        }
-
-        function updateStat(t) { document.getElementById('sys-stat').innerText = t; }
-
-        /* Media & Text Logic */
-        function sendText() {
-            const i = document.getElementById('chat-in');
-            if(conn && i.value) {
-                conn.send({type:'text', u:user, v:i.value});
-                pushMsg(user, i.value, true);
-                i.value = "";
-            }
-        }
-
-        function sendMedia(input) {
-            const file = input.files[0];
-            const reader = new FileReader();
-            reader.onload = () => {
-                const k = file.type.startsWith('video') ? 'v' : 'i';
-                conn.send({type:'media', u:user, v:reader.result, k: k});
-                pushMedia(user, reader.result, k, true);
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function pushMsg(u,v,m=false){ const f=document.getElementById('chat-flow'); const d=document.createElement('div'); d.className=`msg ${m?'me':''}`; d.innerHTML=`<small style="color:var(--xenon)">${u}</small><br>${v}`; f.appendChild(d); }
-        function pushMedia(u,v,k,m=false){ const f=document.getElementById('chat-flow'); const d=document.createElement('div'); d.className=`msg ${m?'me':''}`; const tag=k==='v'?`<video src="${v}" controls></video>`:`<img src="${v}">`; d.innerHTML=`<small style="color:var(--xenon)">${u}</small>${tag}`; f.appendChild(d); }
-        function pushInvite(u, m=false){ const f=document.getElementById('chat-flow'); const d=document.createElement('div'); d.className=`msg ${m?'me':''}`; d.innerHTML=`<div style="border:1px dashed var(--xenon);padding:10px;text-align:center;"><b>${u}</b> is calling.<br>${!m?`<button class="btn" style="margin-top:5px" onclick="joinCall()">JOIN</button>`:`<small>Waiting for peer...</small>`}</div>`; f.appendChild(d); }
-        function pushSys(t){ const f=document.getElementById('chat-flow'); const d=document.createElement('div'); d.style="text-align:center;color:#444;font-size:10px;margin:10px 0;"; d.innerText="[ "+t+" ]"; f.appendChild(d); }
-        function copyID(){ navigator.clipboard.writeText(document.getElementById('my-id').innerText); alert("ID Copied."); }
+        // Initialize
+        window.onload = () => {
+            handleHash();
+        };
+        window.addEventListener('hashchange', handleHash);
     </script>
 </body>
 </html>
